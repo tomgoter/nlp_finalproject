@@ -21,6 +21,7 @@ from __future__ import print_function
 
 import csv
 import os
+import pandas as pd
 
 from absl import flags
 
@@ -71,7 +72,7 @@ class DataProcessor(object):
   @classmethod
   def _read_tsv(cls, input_file, quotechar=None, delimiter="\t"):
     """Reads a tab separated value file."""
-    with tf.gfile.Open(input_file, "r") as f:
+    with tf.io.read_file(input_file, "r") as f:
       reader = csv.reader(f, delimiter=delimiter, quotechar=quotechar)
       lines = []
       for line in reader:
@@ -339,6 +340,68 @@ class DBPediaProcessor(TextClassProcessor):
   def get_dev_size(self):
     return 70000
 
+class GoTProcessor(DataProcessor):
+
+  def get_train_examples(self, raw_data_dir):
+    """See base class."""
+    examples = self._create_examples(
+        pd.read_pickle(os.path.join(raw_data_dir, "train", "train.pkl")),
+                        "train")
+    print("Number of examples created: {}\nNumber expected: {}".format(len(examples),self.get_train_size()))
+    assert len(examples) == self.get_train_size()
+    return examples
+
+  def get_dev_examples(self, raw_data_dir):
+    """See base class."""
+    return self._create_examples(
+        pd.read_pickle(os.path.join(raw_data_dir, "dev", "dev.pkl")),
+                        "dev")
+
+  def get_unsup_examples(self, raw_data_dir, unsup_set):
+    """See base class."""
+    if unsup_set == "unsup_in":
+      return self._create_examples(
+          pd.read_pickle(
+              os.path.join(raw_data_dir, "train.csv"),
+              quotechar="\"",
+              delimiter=","),
+          "unsup_in", skip_unsup=False)
+    else:
+      return self._create_examples(
+          self._read_tsv(
+              os.path.join(raw_data_dir, "{:s}.csv".format(unsup_set)),
+              quotechar="\"",
+              delimiter=","),
+          unsup_set, skip_unsup=False)
+
+  def _create_examples(self, df, set_type, skip_unsup=True,
+                       only_unsup=False):
+    """Creates examples for the training and dev sets."""
+    examples = []
+    for i, row in df.iterrows():
+      if skip_unsup and row[1] == "unsup":
+        continue
+      if only_unsup and row[1] != "unsup":
+        continue
+      guid = "%s-%d".format(set_type, i)
+      text_a = row[0]
+      text_b = None
+      label = row[1]
+      examples.append(
+          InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
+    return examples
+
+  def get_train_size(self):
+    return 15001
+
+  def get_dev_size(self):
+    return 2500
+
+  def get_labels(self):
+    """See base class."""
+    return [str(i) for i in range(1, 6)]
+
+
 
 def get_processor(task_name):
   """get processor."""
@@ -350,7 +413,13 @@ def get_processor(task_name):
       "yelp-5": YELP5Processor,
       "amazon-2": AMAZON2Processor,
       "amazon-5": AMAZON5Processor,
+      "got": GoTProcessor,
   }
   processor = processors[task_name]()
   return processor
+
+
+
+
+
 
