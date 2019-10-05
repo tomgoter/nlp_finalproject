@@ -431,6 +431,10 @@ def proc_and_save_sup_data(
     examples = processor.get_dev_examples(raw_data_dir)
     assert replicas == 1, "dev set can be processsed with just one worker"
     assert sup_size == -1, "should use the full dev set"
+  elif sub_set == "test":
+    examples = processor.get_test_examples(raw_data_dir)
+    assert replicas == 1, "dev set can be processsed with just one worker"
+    assert sup_size == -1, "should use the full test set"
 
   if sup_size != -1:
     logging.info("setting number of examples to {:d}".format(

@@ -13,15 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #!/bin/bash
-bert_vocab_file=../bert_pretrained/bert_base/vocab.txt
+bert_vocab_file=./bert_pretrained/bert_base/vocab.txt
 sub_set=dev
 
 echo Running on $sub_set set
 
 # Preprocess test set
 python preprocess.py \
-  --raw_data_dir=../Data/ \
-  --output_base_dir=../Data/proc_data/GoT/${sub_set} \
+  --raw_data_dir=./Data/ \
+  --output_base_dir=./Data/proc_data/GoT/${sub_set} \
   --data_type=sup \
   --sub_set=${sub_set} \
   --vocab_file=$bert_vocab_file \
