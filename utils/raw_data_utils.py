@@ -356,6 +356,12 @@ class GoTProcessor(DataProcessor):
     return self._create_examples(
         pd.read_pickle(os.path.join(raw_data_dir, "dev", "dev.pkl")),
                         "dev")
+    
+  def get_test_examples(self, raw_data_dir):
+    """See base class."""
+    return self._create_examples(
+        pd.read_pickle(os.path.join(raw_data_dir, "test", "test.pkl")),
+                        "test")
 
   def get_unsup_examples(self, raw_data_dir, unsup_set):
     """See base class."""
