@@ -960,11 +960,15 @@ def assert_rank(tensor, expected_rank, name=None):
   Raises:
     ValueError: If the expected shape doesn't match the actual shape.
   """
+  
+  
   if name is None:
     name = tensor.name
-
+  
+  tf.logging.info("asserting rank for {}".format(name))
+  
   expected_rank_dict = {}
-  if isinstance(expected_rank, (int, long)):
+  if isinstance(expected_rank, int):
     expected_rank_dict[expected_rank] = True
   else:
     for x in expected_rank:

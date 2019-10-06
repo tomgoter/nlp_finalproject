@@ -90,7 +90,7 @@ class BertConfig(object):
   @classmethod
   def from_json_file(cls, json_file, model_dropout):
     """Constructs a `BertConfig` from a json file of parameters."""
-    with tf.gfile.GFile(json_file, "r") as reader:
+    with tf.io.gfile.GFile(json_file, "r") as reader:
       text = reader.read()
     config = cls.from_dict(json.loads(text))
     if model_dropout != -1:
@@ -960,11 +960,15 @@ def assert_rank(tensor, expected_rank, name=None):
   Raises:
     ValueError: If the expected shape doesn't match the actual shape.
   """
+  
+  
   if name is None:
     name = tensor.name
-
+  
+  tf.logging.info("asserting rank for {}".format(name))
+  
   expected_rank_dict = {}
-  if isinstance(expected_rank, (int, long)):
+  if isinstance(expected_rank, int):
     expected_rank_dict[expected_rank] = True
   else:
     for x in expected_rank:

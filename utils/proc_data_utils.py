@@ -25,12 +25,8 @@ import json
 import os
 import string
 
-from absl import flags
-
 import numpy as np
 import tensorflow as tf
-
-FLAGS = flags.FLAGS
 
 
 def _decode_record(record, name_to_features):
@@ -42,41 +38,40 @@ def _decode_record(record, name_to_features):
   for name in list(example.keys()):
     t = example[name]
     if t.dtype == tf.int64:
-      t = tf.to_int32(t)
+      t = tf.cast(t, tf.int32)
     example[name] = t
 
   return example
 
 
-def get_sup_feature_specs():
+def get_sup_feature_specs(max_seq_len):
+  
+  tf.logging.info("***** Max Sequence Length = {} *****".format(max_seq_len))
+  
   """Get supervised feature."""
   feature_specs = collections.OrderedDict()
-  feature_specs["input_ids"] = tf.FixedLenFeature(
-      [FLAGS.max_seq_length], tf.int64)
-  feature_specs["input_mask"] = tf.FixedLenFeature(
-      [FLAGS.max_seq_length], tf.int64)
-  feature_specs["input_type_ids"] = tf.FixedLenFeature(
-      [FLAGS.max_seq_length], tf.int64)
-  feature_specs["label_ids"] = tf.FixedLenFeature(
-      [1], tf.int64)
+  feature_specs["input_ids"] = tf.io.FixedLenFeature([max_seq_len], tf.int64)
+  feature_specs["input_mask"] = tf.io.FixedLenFeature([max_seq_len], tf.int64)
+  feature_specs["input_type_ids"] = tf.io.FixedLenFeature([max_seq_len], tf.int64)
+  feature_specs["label_ids"] = tf.io.FixedLenFeature([1], tf.int64)
   return feature_specs
 
 
-def get_unsup_feature_specs():
+def get_unsup_feature_specs(options):
   """Get unsupervised feature."""
   feature_specs = collections.OrderedDict()
-  feature_specs["ori_input_ids"] = tf.FixedLenFeature(
-      [FLAGS.max_seq_length], tf.int64)
-  feature_specs["ori_input_mask"] = tf.FixedLenFeature(
-      [FLAGS.max_seq_length], tf.int64)
-  feature_specs["ori_input_type_ids"] = tf.FixedLenFeature(
-      [FLAGS.max_seq_length], tf.int64)
-  feature_specs["aug_input_ids"] = tf.FixedLenFeature(
-      [FLAGS.max_seq_length], tf.int64)
-  feature_specs["aug_input_mask"] = tf.FixedLenFeature(
-      [FLAGS.max_seq_length], tf.int64)
-  feature_specs["aug_input_type_ids"] = tf.FixedLenFeature(
-      [FLAGS.max_seq_length], tf.int64)
+  feature_specs["ori_input_ids"] = tf.io.FixedLenFeature(
+      [max_seq_len], tf.int64)
+  feature_specs["ori_input_mask"] = tf.io.FixedLenFeature(
+      [max_seq_len], tf.int64)
+  feature_specs["ori_input_type_ids"] = tf.io.FixedLenFeature(
+      [max_seq_len], tf.int64)
+  feature_specs["aug_input_ids"] = tf.io.FixedLenFeature(
+      [max_seq_len], tf.int64)
+  feature_specs["aug_input_mask"] = tf.io.FixedLenFeature(
+      [max_seq_len], tf.int64)
+  feature_specs["aug_input_type_ids"] = tf.io.FixedLenFeature(
+      [max_seq_len], tf.int64)
   return feature_specs
 
 
@@ -152,7 +147,7 @@ def get_evaluation_dataset(total_data_files, batch_size, feature_specs):
   return d
 
 
-def evaluation_input_fn_builder(data_base_path, task, prefetch_size=1000):
+def evaluation_input_fn_builder(data_base_path, task, prefetch_size=1000, options=None):
 
   total_data_files = tf.contrib.slim.parallel_reader.get_data_files(
       os.path.join(data_base_path, "tf_examples.tfrecord*"))
@@ -166,7 +161,7 @@ def evaluation_input_fn_builder(data_base_path, task, prefetch_size=1000):
       dataset = get_evaluation_dataset(
           total_data_files,
           batch_size,
-          get_sup_feature_specs())
+          get_sup_feature_specs(options))
     else:
       assert False
 
@@ -185,10 +180,15 @@ def training_input_fn_builder(
     unsup_ratio=None,
     num_threads=8,
     shuffle_buffer_size=100000,
-    prefetch_size=1000):
-
+    prefetch_size=1000, 
+    max_seq_len=None):
+  
+  
   sup_total_data_files = tf.contrib.slim.parallel_reader.get_data_files(
       os.path.join(sup_data_base_path, "tf_examples.tfrecord*"))
+  tf.logging.info("looking in {} for files".format(sup_data_base_path))
+  tf.logging.info("loading training data from these files: {:s}".format(
+      " ".join(sup_total_data_files)))
 
   if unsup_ratio is not None and unsup_ratio > 0:
     assert aug_ops is not None and aug_copy is not None, \
@@ -219,20 +219,20 @@ def training_input_fn_builder(
           num_threads,
           is_training,
           shuffle_buffer_size,
-          get_sup_feature_specs())
+          get_sup_feature_specs(max_seq_len))
       total_batch_size += sup_batch_size
       tf.logging.info("sup batch size: %d", (sup_batch_size))
       dataset_list.append(sup_dst)
 
       ## only consider unsupervised data when supervised data is considered
-      if unsup_data_base_path is not None and FLAGS.unsup_ratio > 0:
+      if unsup_data_base_path is not None and options['unsup_ratio'] > 0:
         unsup_dst = get_training_dataset(
             unsup_total_data_files,
             sup_batch_size * unsup_ratio,
             num_threads,
             is_training,
             shuffle_buffer_size,
-            get_unsup_feature_specs())
+            get_unsup_feature_specs(max_seq_len))
         total_batch_size += sup_batch_size * unsup_ratio * 2
         dataset_list.append(unsup_dst)
         tf.logging.info("unsup batch size: %d", (sup_batch_size * unsup_ratio))
