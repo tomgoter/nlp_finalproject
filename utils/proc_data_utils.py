@@ -112,6 +112,7 @@ def get_training_dataset(total_data_files, batch_size, num_threads, is_training,
                          shuffle_buffer_size, feature_specs):
   """build dataset from files."""
   d = tf.data.Dataset.from_tensor_slices(tf.constant(total_data_files))
+  print(d)
   d = d.apply(
       tf.data.experimental.shuffle_and_repeat(
           buffer_size=len(total_data_files)))
@@ -121,11 +122,15 @@ def get_training_dataset(total_data_files, batch_size, num_threads, is_training,
 
   # `sloppy` mode means that the interleaving is not exact. This adds
   # even more randomness to the training pipeline.
-  d = d.apply(
-      tf.data.experimental.parallel_interleave(
-          tf.data.TFRecordDataset,
-          sloppy=is_training,
-          cycle_length=cycle_length))
+#   d = d.apply(
+#       tf.data.experimental.parallel_interleave(
+#           tf.data.TFRecordDataset,
+#           sloppy=False,
+#           cycle_length=tf.data.experimental.AUTOTUNE))
+  d = d.interleave(lambda x: tf.data.TFRecordDataset(x),
+          cycle_length=cycle_length,
+          block_length=1,
+          num_parallel_calls=tf.data.experimental.AUTOTUNE)
   d = d.shuffle(buffer_size=shuffle_buffer_size)
   d = d.apply(
       tf.data.experimental.map_and_batch(
