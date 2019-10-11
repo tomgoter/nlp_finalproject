@@ -34,6 +34,7 @@ FLAGS = flags.FLAGS
 
 
 def kl_for_log_probs(log_p, log_q):
+  logging.info("Calculating KL divergence")
   p = tf.exp(log_p)
   neg_ent = tf.reduce_sum(p * log_p, axis=-1)
   neg_cross_ent = tf.reduce_sum(p * log_q, axis=-1)
@@ -53,8 +54,8 @@ def hidden_to_logits(hidden, is_training, num_classes, scope):
         "output_bias", [num_classes], initializer=tf.zeros_initializer())
 
     if is_training:
-      # I.e., 0.1 dropout
-      hidden = tf.nn.dropout(hidden, keep_prob=0.9)
+      # Converted to use rate
+      hidden = tf.nn.dropout(hidden, rate=0.1)
 
     if hidden.shape.ndims == 3:
       logits = tf.einsum("bid,nd->bin", hidden, output_weights)
@@ -66,9 +67,14 @@ def hidden_to_logits(hidden, is_training, num_classes, scope):
 
 
 def get_tsa_threshold(schedule, global_step, num_train_steps, start, end):
-  training_progress = tf.to_float(global_step) / tf.to_float(num_train_steps)
+  
+  # Fraction of the way through the training
+  training_progress = tf.cast(global_step, tf.float32) / tf.cast(num_train_steps, tf.float32)
+  
+  # Calculate threshold based on the annealing schedule
   if schedule == "linear_schedule":
     threshold = training_progress
+    # Assumes constant scaling factor - could turn this into an input variable
   elif schedule == "exp_schedule":
     scale = 5
     threshold = tf.exp((training_progress - 1) * scale)
@@ -132,6 +138,8 @@ def create_model(
         one_hot_labels * tf.exp(sup_log_probs), axis=-1)
 
     if tsa:
+      logging.info("Applying TSA")
+      # Starting threshold is just the inverse number of labels.
       tsa_start = 1. / num_labels
       tsa_threshold = get_tsa_threshold(
           tsa, global_step, num_train_steps,
@@ -245,6 +253,7 @@ def model_fn_builder(
     label_ids = tf.reshape(label_ids, [-1])
 
     if unsup_ratio > 0 and "ori_input_ids" in features:
+      logging.info("Creating UDA model")
       input_ids = tf.concat([
           features["input_ids"],
           features["ori_input_ids"],
@@ -258,6 +267,7 @@ def model_fn_builder(
           features["ori_input_type_ids"],
           features["aug_input_type_ids"]], 0)
     else:
+      logging.info("Creating supervised model")
       input_ids = features["input_ids"]
       input_mask = features["input_mask"]
       input_type_ids = features["input_type_ids"]
@@ -285,7 +295,7 @@ def model_fn_builder(
 
     # number of correct predictions
     predictions = tf.argmax(logits, axis=-1, output_type=label_ids.dtype)
-    is_correct = tf.to_float(tf.equal(predictions, label_ids))
+    is_correct = tf.cast(tf.equal(predictions, label_ids), tf.float32)
     acc = tf.reduce_mean(is_correct)
     # add sup. metrics to dict
     metric_dict["sup/loss"] = sup_loss
@@ -318,7 +328,7 @@ def model_fn_builder(
 
         scaffold_fn = tpu_scaffold
       else:
-        tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
+        tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
     else:
       initialized_variable_names = {}
 
@@ -338,7 +348,8 @@ def model_fn_builder(
       train_op, curr_lr = optimization.create_optimizer(
           total_loss, learning_rate, num_train_steps, num_warmup_steps,
           use_tpu, clip_norm, global_step)
-      metric_dict["learning_rate"] = curr_lr
+      # Needed to cast the learning rate from the dictionary from a string to a float
+      metric_dict["learning_rate"] = tf.cast(curr_lr, tf.float32)      
 
       ## Create host_call for training
       host_call = tpu_utils.construct_scalar_host_call(

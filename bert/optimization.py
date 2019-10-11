@@ -25,7 +25,7 @@ import re
 import tensorflow as tf
 
 
-class AdamWeightDecayOptimizer(tf.keras.optimizers.Optimizer):
+class AdamWeightDecayOptimizer(tf.train.Optimizer):
   """A basic Adam optimizer that includes "correct" L2 weight decay."""
 
   def __init__(self,

@@ -31,7 +31,8 @@ import tensorflow as tf
 
 def _decode_record(record, name_to_features):
   """Decodes a record to a TensorFlow example."""
-  example = tf.parse_single_example(record, name_to_features)
+  # Moved to io class
+  example = tf.io.parse_single_example(record, name_to_features)
 
   # tf.Example only supports tf.int64, but the TPU only supports tf.int32.
   # So cast all int64 to int32.
@@ -82,6 +83,7 @@ def get_aug_files(data_base_path, aug_ops, aug_copy):
   total_data_files = []
   for sub_policy in sub_policy_list:
     sub_policy_data_files = []
+    
     exist_copy_num = {}
     for copy_dir in tf.gfile.ListDirectory(os.path.join(
         data_base_path, sub_policy)):
@@ -111,7 +113,7 @@ def get_training_dataset(total_data_files, batch_size, num_threads, is_training,
   """build dataset from files."""
   d = tf.data.Dataset.from_tensor_slices(tf.constant(total_data_files))
   d = d.apply(
-      tf.contrib.data.shuffle_and_repeat(
+      tf.data.experimental.shuffle_and_repeat(
           buffer_size=len(total_data_files)))
 
   # `cycle_length` is the number of parallel files that get read.
@@ -120,13 +122,13 @@ def get_training_dataset(total_data_files, batch_size, num_threads, is_training,
   # `sloppy` mode means that the interleaving is not exact. This adds
   # even more randomness to the training pipeline.
   d = d.apply(
-      tf.contrib.data.parallel_interleave(
+      tf.data.experimental.parallel_interleave(
           tf.data.TFRecordDataset,
           sloppy=is_training,
           cycle_length=cycle_length))
   d = d.shuffle(buffer_size=shuffle_buffer_size)
   d = d.apply(
-      tf.contrib.data.map_and_batch(
+      tf.data.experimental.map_and_batch(
           lambda record: _decode_record(record, feature_specs),
           batch_size=batch_size,
           num_parallel_batches=num_threads,
@@ -138,7 +140,7 @@ def get_evaluation_dataset(total_data_files, batch_size, feature_specs):
   """build non-repeat dataset from files."""
   d = tf.data.TFRecordDataset(total_data_files)
   d = d.apply(
-      tf.contrib.data.map_and_batch(
+      tf.data.experimental.map_and_batch(
           lambda record: _decode_record(record, feature_specs),
           batch_size=batch_size,
           num_parallel_batches=None,

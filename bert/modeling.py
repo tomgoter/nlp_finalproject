@@ -82,6 +82,7 @@ class BertConfig(object):
   @classmethod
   def from_dict(cls, json_object):
     """Constructs a `BertConfig` from a Python dictionary of parameters."""
+    tf.logging.info("Setting up BERT Config using data from {}".format(json_object))
     config = BertConfig(vocab_size=None)
     for (key, value) in six.iteritems(json_object):
       config.__dict__[key] = value
@@ -90,6 +91,7 @@ class BertConfig(object):
   @classmethod
   def from_json_file(cls, json_file, model_dropout):
     """Constructs a `BertConfig` from a json file of parameters."""
+    tf.logging.info("Setting up BERT Config using data from {}".format(json_file))
     with tf.io.gfile.GFile(json_file, "r") as reader:
       text = reader.read()
     config = cls.from_dict(json.loads(text))
@@ -134,6 +136,7 @@ def bert_embedding(config,
   with tf.variable_scope("bert", scope, reuse=tf.AUTO_REUSE):
     with tf.variable_scope("embeddings"):
       # Perform embedding lookup on the word ids.
+      tf.logging.info("Looking up embeddings using the embedding_lookup funcion")
       (embedding_output, embedding_table) = embedding_lookup(
           input_ids=input_ids,
           vocab_size=config.vocab_size,
@@ -312,7 +315,7 @@ def get_activation(activation_string):
 
   # We assume that anything that's not a string is already an activation
   # function, so we just return it.
-  if not isinstance(activation_string, (str, unicode)):
+  if not isinstance(activation_string, str):
     return activation_string
 
   if not activation_string:
@@ -344,13 +347,17 @@ def dropout(input_tensor, dropout_prob):
   """
   if dropout_prob is None or dropout_prob == 0.0:
     return input_tensor
-
-  output = tf.nn.dropout(input_tensor, 1.0 - dropout_prob)
+  
+  tf.logging.info("Adding dropout to layer at rate of {:.2f}".format(dropout_prob))
+  
+  # Changed this to use rate instead of keep_prob as keep_prob is deprecated
+  output = tf.nn.dropout(input_tensor, rate = dropout_prob)
   return output
 
 
 def layer_norm(input_tensor, name=None):
   """Run layer normalization on the last dimension of the tensor."""
+  tf.logging.info("Normalizing layer - centering and scaling")
   return tf.contrib.layers.layer_norm(
       inputs=input_tensor, begin_norm_axis=-1, begin_params_axis=-1, scope=name)
 
@@ -397,6 +404,7 @@ def embedding_lookup(input_ids,
   if input_ids.shape.ndims == 2:
     input_ids = tf.expand_dims(input_ids, axis=[-1])
 
+  tf.logging.info("Creating bert embeddings in the embedding_lookup function of bert/modeling.py")
   embedding_table = tf.get_variable(
       name=word_embedding_name,
       shape=[vocab_size, embedding_size],
@@ -453,6 +461,9 @@ def embedding_postprocessor(input_tensor,
   Raises:
     ValueError: One of the tensor shapes or input values is invalid.
   """
+
+  tf.logging.info("Post-processing the word embeddings.")
+  
   input_shape = get_shape_list(input_tensor, expected_rank=3)
   batch_size = input_shape[0]
   seq_length = input_shape[1]
@@ -469,6 +480,7 @@ def embedding_postprocessor(input_tensor,
     if token_type_ids is None:
       raise ValueError("`token_type_ids` must be specified if"
                        "`use_token_type` is True.")
+    tf.logging.info("Adding token type embeddings.")
     token_type_table = tf.get_variable(
         name=token_type_embedding_name,
         shape=[token_type_vocab_size, width],
@@ -483,6 +495,7 @@ def embedding_postprocessor(input_tensor,
     output += token_type_embeddings
 
   if use_position_embeddings:
+    tf.logging.info("Adding positional embeddings")
     full_position_embeddings = tf.get_variable(
         name=position_embedding_name,
         shape=[max_position_embeddings, width],
@@ -511,6 +524,7 @@ def embedding_postprocessor(input_tensor,
                                      position_broadcast_shape)
     output += position_embeddings
 
+  # Normalize and potentially add dropout to the embedding vector
   output = layer_norm_and_dropout(output, dropout_prob)
   return output
 
