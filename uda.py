@@ -361,12 +361,12 @@ def model_fn_builder(
 
         return ret_dict
 
-      eval_metrics = (clas_metric_fn, [per_example_loss, label_ids, logits])
+      eval_metrics = clas_metric_fn(per_example_loss, label_ids, logits)
 
       output_spec = tf.estimator.EstimatorSpec(
           mode=mode,
           loss=total_loss,
-          eval_metrics=eval_metrics)
+          eval_metric_ops=eval_metrics)
     else:
       raise ValueError("Only TRAIN and EVAL modes are supported: %s" % (mode))
 

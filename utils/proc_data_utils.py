@@ -58,6 +58,19 @@ def get_sup_feature_specs(max_seq_len):
   feature_specs["label_ids"] = tf.io.FixedLenFeature([1], tf.int64)
   return feature_specs
 
+def get_sup_feature_specs_eval(max_seq_len):
+ 
+  """
+  This function creates a dictionary which maps feature names to 
+  Fixed Length Features of the appropriate dimensions.
+  """
+  feature_specs = collections.OrderedDict()
+  feature_specs["input_ids"] = tf.io.FixedLenFeature([max_seq_len], tf.int64)
+  feature_specs["input_mask"] = tf.io.FixedLenFeature([max_seq_len], tf.int64)
+  feature_specs["input_type_ids"] = tf.io.FixedLenFeature([max_seq_len], tf.int64)
+  feature_specs["label_ids"] = tf.io.FixedLenFeature([1], tf.int64)
+  return feature_specs
+
 
 def get_unsup_feature_specs(options):
   """
@@ -118,27 +131,24 @@ def get_training_dataset(total_data_files, batch_size, is_training,feature_specs
   deal because we only ever load in <4 files
   """
   d = tf.data.TFRecordDataset(total_data_files)
-  tf.logging.info("{}".format(d))
+  tf.logging.debug("{}".format(d))
   d = d.map(lambda record: _decode_record(record, feature_specs))
   d = d.batch(batch_size=batch_size, drop_remainder=is_training)
-  tf.logging.info("Returning batch data {}".format(d))
+  tf.logging.debug("Returning batch data {}".format(d))
   return d
 
 
 def get_evaluation_dataset(total_data_files, batch_size, feature_specs):
   """build non-repeat dataset from files."""
+  tf.logging.debug("{}".format(feature_specs))
   d = tf.data.TFRecordDataset(total_data_files)
-  d = d.apply(
-      tf.data.experimental.map_and_batch(
-          lambda record: _decode_record(record, feature_specs),
-          batch_size=batch_size,
-          num_parallel_batches=None,
-          drop_remainder=True))
-
+  d = d.map(lambda record: _decode_record(record, feature_specs))
+  d = d.batch(batch_size=batch_size, drop_remainder=True)
+  tf.logging.debug("Returning evaluation batch data {}".format(d))
   return d
 
 
-def evaluation_input_fn_builder(data_base_path, task, prefetch_size=1000, options=None):
+def evaluation_input_fn_builder(data_base_path, task, prefetch_size=1000, options=None,max_seq_len=None):
 
   total_data_files = tf.contrib.slim.parallel_reader.get_data_files(
       os.path.join(data_base_path, "tf_examples.tfrecord*"))
@@ -146,13 +156,13 @@ def evaluation_input_fn_builder(data_base_path, task, prefetch_size=1000, option
       task, " ".join(total_data_files)))
 
   def input_fn(params):
-    batch_size = params["batch_size"]
+    batch_size = params["eval_batch_size"]
 
     if task == "clas":
       dataset = get_evaluation_dataset(
           total_data_files,
           batch_size,
-          get_sup_feature_specs(options))
+          get_sup_feature_specs(max_seq_len))
     else:
       assert False
 
@@ -224,7 +234,7 @@ def training_input_fn_builder(
             sup_batch_size * unsup_ratio,
             num_threads,
             is_training,
-            get_unsup_feature_specs(max_seq_len))
+            get_unsup_feature_specs(options))
         total_batch_size += sup_batch_size * unsup_ratio * 2
         dataset_list.append(unsup_dst)
         tf.logging.info("unsup batch size: %d", (sup_batch_size * unsup_ratio))
