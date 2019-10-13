@@ -1,7 +1,5 @@
 # YAML Config File for BERT Finetuned Models
 
-use_tpu: False
-
 do_train: True
 
 do_eval : True
@@ -22,6 +20,6 @@ model_dir:  'model/base_20'
 
 num_train_steps:  50 
 
-learning_rate:  3e-05
+learning_rate:  0.00003
 
 num_warmup_steps:  20 

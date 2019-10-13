@@ -46,10 +46,11 @@ def _decode_record(record, name_to_features):
 
 
 def get_sup_feature_specs(max_seq_len):
-  
-  tf.logging.info("***** Max Sequence Length = {} *****".format(max_seq_len))
-  
-  """Get supervised feature."""
+ 
+  """
+  This function creates a dictionary which maps feature names to 
+  Fixed Length Features of the appropriate dimensions.
+  """
   feature_specs = collections.OrderedDict()
   feature_specs["input_ids"] = tf.io.FixedLenFeature([max_seq_len], tf.int64)
   feature_specs["input_mask"] = tf.io.FixedLenFeature([max_seq_len], tf.int64)
@@ -59,26 +60,29 @@ def get_sup_feature_specs(max_seq_len):
 
 
 def get_unsup_feature_specs(options):
-  """Get unsupervised feature."""
+  """
+  This function creates a dictionary which maps feature names to 
+  Fixed Length Features of the appropriate dimensions.
+  """
   feature_specs = collections.OrderedDict()
   feature_specs["ori_input_ids"] = tf.io.FixedLenFeature(
-      [max_seq_len], tf.int64)
+        [max_seq_len], tf.int64)
   feature_specs["ori_input_mask"] = tf.io.FixedLenFeature(
-      [max_seq_len], tf.int64)
+        [max_seq_len], tf.int64)
   feature_specs["ori_input_type_ids"] = tf.io.FixedLenFeature(
-      [max_seq_len], tf.int64)
+        [max_seq_len], tf.int64)
   feature_specs["aug_input_ids"] = tf.io.FixedLenFeature(
-      [max_seq_len], tf.int64)
+        [max_seq_len], tf.int64)
   feature_specs["aug_input_mask"] = tf.io.FixedLenFeature(
-      [max_seq_len], tf.int64)
+        [max_seq_len], tf.int64)
   feature_specs["aug_input_type_ids"] = tf.io.FixedLenFeature(
-      [max_seq_len], tf.int64)
+        [max_seq_len], tf.int64)
   return feature_specs
 
 
 def get_aug_files(data_base_path, aug_ops, aug_copy):
   """get aug files."""
-
+  tf.logging.info("Getting Augmented Data Files")
   sub_policy_list = aug_ops.split("+")
   total_data_files = []
   for sub_policy in sub_policy_list:
@@ -108,36 +112,16 @@ def get_aug_files(data_base_path, aug_ops, aug_copy):
   return total_data_files
 
 
-def get_training_dataset(total_data_files, batch_size, num_threads, is_training,
-                         shuffle_buffer_size, feature_specs):
-  """build dataset from files."""
-  d = tf.data.Dataset.from_tensor_slices(tf.constant(total_data_files))
-  print(d)
-  d = d.apply(
-      tf.data.experimental.shuffle_and_repeat(
-          buffer_size=len(total_data_files)))
-
-  # `cycle_length` is the number of parallel files that get read.
-  cycle_length = min(num_threads, len(total_data_files))
-
-  # `sloppy` mode means that the interleaving is not exact. This adds
-  # even more randomness to the training pipeline.
-#   d = d.apply(
-#       tf.data.experimental.parallel_interleave(
-#           tf.data.TFRecordDataset,
-#           sloppy=False,
-#           cycle_length=tf.data.experimental.AUTOTUNE))
-  d = d.interleave(lambda x: tf.data.TFRecordDataset(x),
-          cycle_length=cycle_length,
-          block_length=1,
-          num_parallel_calls=tf.data.experimental.AUTOTUNE)
-  d = d.shuffle(buffer_size=shuffle_buffer_size)
-  d = d.apply(
-      tf.data.experimental.map_and_batch(
-          lambda record: _decode_record(record, feature_specs),
-          batch_size=batch_size,
-          num_parallel_batches=num_threads,
-          drop_remainder=is_training))
+def get_training_dataset(total_data_files, batch_size, is_training,feature_specs):
+  """
+  Simplified version of original function. Handles files serially. Not a big
+  deal because we only ever load in <4 files
+  """
+  d = tf.data.TFRecordDataset(total_data_files)
+  tf.logging.info("{}".format(d))
+  d = d.map(lambda record: _decode_record(record, feature_specs))
+  d = d.batch(batch_size=batch_size, drop_remainder=is_training)
+  tf.logging.info("Returning batch data {}".format(d))
   return d
 
 
@@ -186,17 +170,18 @@ def training_input_fn_builder(
     aug_copy=None,
     unsup_ratio=None,
     num_threads=8,
-    shuffle_buffer_size=100000,
     prefetch_size=1000, 
     max_seq_len=None):
   
-  
+  # Generate list of input files from which to grab our records
   sup_total_data_files = tf.contrib.slim.parallel_reader.get_data_files(
       os.path.join(sup_data_base_path, "tf_examples.tfrecord*"))
-  tf.logging.info("looking in {} for files".format(sup_data_base_path))
+  
+  # Print the files out to the screen
   tf.logging.info("loading training data from these files: {:s}".format(
       " ".join(sup_total_data_files)))
 
+  # Unsupervised Data input requirements
   if unsup_ratio is not None and unsup_ratio > 0:
     assert aug_ops is not None and aug_copy is not None, \
         "Require aug_ops, aug_copy to load augmented unsup data."
@@ -210,25 +195,26 @@ def training_input_fn_builder(
   is_training = True
 
   def input_fn(params):
-    """The `input_fn` for TPUEstimator which generates the feature dataset."""
-    sup_batch_size = params["batch_size"]
+    """The `input_fn` for our Esimator."""
+    sup_batch_size = params["train_batch_size"]
     total_batch_size = 0
-    tf.logging.info("sup batch size: %d", (sup_batch_size))
+    tf.logging.info("Supervised batch size: %d", (sup_batch_size))
 
     dataset_list = []
 
     # For training, we want a lot of parallel reading and shuffling.
     # For eval, we want no shuffling and parallel reading doesn't matter.
     if sup_data_base_path is not None:
+      tf.logging.info("Getting training examples")
+      
+      # Get training dataset returns a batch of decoded data
       sup_dst = get_training_dataset(
           sup_total_data_files,
           sup_batch_size,
-          num_threads,
           is_training,
-          shuffle_buffer_size,
           get_sup_feature_specs(max_seq_len))
+      tf.logging.info("Got a batch of training data of size: {}".format(sup_batch_size))
       total_batch_size += sup_batch_size
-      tf.logging.info("sup batch size: %d", (sup_batch_size))
       dataset_list.append(sup_dst)
 
       ## only consider unsupervised data when supervised data is considered
@@ -238,7 +224,6 @@ def training_input_fn_builder(
             sup_batch_size * unsup_ratio,
             num_threads,
             is_training,
-            shuffle_buffer_size,
             get_unsup_feature_specs(max_seq_len))
         total_batch_size += sup_batch_size * unsup_ratio * 2
         dataset_list.append(unsup_dst)
@@ -266,7 +251,7 @@ def training_input_fn_builder(
     # read in the event of network latency variance.
     d = d.prefetch(prefetch_size)
 
-    # TPUEstimator supports returning a dataset instead of just features.
+    # Estimator supports returning a dataset instead of just features.
     # It will call `make_one_shot_iterator()` and such.
     return d
   return input_fn

@@ -115,7 +115,7 @@ class AdamWeightDecayOptimizer(tf.train.Optimizer):
     return param_name
 
 
-def get_adam_optimizer(learning_rate, use_tpu):
+def get_adam_optimizer(learning_rate):
   """get adam optimizer."""
   # It is recommended that you use this optimizer for fine tuning, since this
   # is how the model was trained (note that the Adam m/v variables are NOT
@@ -127,14 +127,12 @@ def get_adam_optimizer(learning_rate, use_tpu):
       beta_2=0.999,
       epsilon=1e-6,
       exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"])
-
-  if use_tpu:
-    optimizer = tf.contrib.tpu.CrossShardOptimizer(optimizer)
+  
   return optimizer
 
 
 def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps,
-                     use_tpu, clip_norm, global_step):
+                     clip_norm, global_step):
   """Creates an optimizer training op."""
 
   learning_rate = tf.constant(value=init_lr, shape=[], dtype=tf.float32)
@@ -169,7 +167,7 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps,
   # the model was pre-trained with grad clip 1.0.
   (grads, _) = tf.clip_by_global_norm(grads, clip_norm=clip_norm)
 
-  optimizer = get_adam_optimizer(learning_rate, use_tpu)
+  optimizer = get_adam_optimizer(learning_rate)
   train_op = optimizer.apply_gradients(
       zip(grads, tvars), global_step=global_step)
 

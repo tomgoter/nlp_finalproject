@@ -1,7 +1,5 @@
 # YAML Config File for BERT Finetuned Models
 
-use_tpu: False
-
 do_train: True
 
 do_eval : True

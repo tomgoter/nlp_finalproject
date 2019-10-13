@@ -24,7 +24,6 @@ import tensorflow as tf
 
 from bert import modeling
 from bert import optimization
-from utils import tpu_utils
 
 from absl import app
 from absl import flags
@@ -94,7 +93,6 @@ def create_model(
     input_type_ids,
     labels,
     num_labels,
-    use_one_hot_embeddings,
     tsa,
     unsup_ratio,
     global_step,
@@ -115,8 +113,7 @@ def create_model(
       is_training=is_training,
       input_ids=input_ids,
       input_mask=input_mask,
-      token_type_ids=input_type_ids,
-      use_one_hot_embeddings=use_one_hot_embeddings)
+      token_type_ids=input_type_ids)
 
   clas_logits = hidden_to_logits(
       hidden=pooled,
@@ -227,27 +224,25 @@ def model_fn_builder(
     clip_norm,
     num_train_steps,
     num_warmup_steps,
-    use_tpu,
-    use_one_hot_embeddings,
     num_labels,
     unsup_ratio,
     uda_coeff,
     tsa,
     print_feature=True,
     print_structure=True):
-  """Returns `model_fn` closure for TPUEstimator."""
+  """Returns `model_fn` ."""
 
   def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
-    """The `model_fn` for TPUEstimator."""
+    """The `model_fn` for Estimator."""
     if print_feature:
       logging.info("*** Features ***")
       for name in sorted(features.keys()):
-        logging.info(
-            "  name = %s, shape = %s" % (name, features[name].shape))
+        logging.info("Name = {}, Shape = {}".format(name, features[name].shape))
 
     is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
     global_step = tf.train.get_or_create_global_step()
+    
     ##### Classification objective
     label_ids = features["label_ids"]
     label_ids = tf.reshape(label_ids, [-1])
@@ -283,7 +278,6 @@ def model_fn_builder(
          input_type_ids=input_type_ids,
          labels=label_ids,
          num_labels=num_labels,
-         use_one_hot_embeddings=use_one_hot_embeddings,
          tsa=tsa,
          unsup_ratio=unsup_ratio,
          global_step=global_step,
@@ -306,6 +300,7 @@ def model_fn_builder(
     metric_dict["sup/sup_trained_ratio"] = tf.reduce_mean(loss_mask)
     total_loss = sup_loss
 
+    # If using UDA add the unsupervised loss to the supervised loss
     if unsup_ratio > 0 and uda_coeff > 0 and "input_ids" in features:
       total_loss += uda_coeff * unsup_loss
       metric_dict["unsup/loss"] = unsup_loss
@@ -314,21 +309,14 @@ def model_fn_builder(
       metric_dict["unsup/high_prob_ratio"] = tf.reduce_mean(unsup_loss_mask)
 
     ##### Initialize variables with pre-trained models
-    tvars = tf.trainable_variables()
+    tvars = tf.compat.v1.trainable_variables()
 
     scaffold_fn = None
     if init_checkpoint:
       (assignment_map,
        initialized_variable_names) = get_assignment_map_from_checkpoint(
            tvars, init_checkpoint)
-      if use_tpu:
-        def tpu_scaffold():
-          tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
-          return tf.train.Scaffold()
-
-        scaffold_fn = tpu_scaffold
-      else:
-        tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
+      tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
     else:
       initialized_variable_names = {}
 
@@ -341,29 +329,21 @@ def model_fn_builder(
         logging.info("  name = %s, shape = %s%s", var.name, var.shape,
                         init_string)
 
-    ##### Construct TPU Estimator Spec based on the specific mode
+    ##### Construct Estimator Spec based on the specific mode
     output_spec = None
     if mode == tf.estimator.ModeKeys.TRAIN:
       ## Create optimizer for training
       train_op, curr_lr = optimization.create_optimizer(
           total_loss, learning_rate, num_train_steps, num_warmup_steps,
-          use_tpu, clip_norm, global_step)
+          clip_norm, global_step)
       # Needed to cast the learning rate from the dictionary from a string to a float
       metric_dict["learning_rate"] = tf.cast(curr_lr, tf.float32)      
-
-      ## Create host_call for training
-      host_call = tpu_utils.construct_scalar_host_call(
-          metric_dict=metric_dict,
-          model_dir=params["model_dir"],
-          prefix="training/",
-          reduce_fn=tf.reduce_mean)
-
-      output_spec = tf.contrib.tpu.TPUEstimatorSpec(
+     
+      # Specify the output from the estimator. train_op applies the gradients and advances the step
+      output_spec = tf.estimator.EstimatorSpec(
           mode=mode,
           loss=total_loss,
-          train_op=train_op,
-          host_call=host_call,
-          scaffold_fn=scaffold_fn)
+          train_op=train_op)
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
@@ -383,11 +363,10 @@ def model_fn_builder(
 
       eval_metrics = (clas_metric_fn, [per_example_loss, label_ids, logits])
 
-      output_spec = tf.contrib.tpu.TPUEstimatorSpec(
+      output_spec = tf.estimator.EstimatorSpec(
           mode=mode,
           loss=total_loss,
-          eval_metrics=eval_metrics,
-          scaffold_fn=scaffold_fn)
+          eval_metrics=eval_metrics)
     else:
       raise ValueError("Only TRAIN and EVAL modes are supported: %s" % (mode))
 

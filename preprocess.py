@@ -56,7 +56,7 @@ flags.DEFINE_integer(
     "example")
 
 flags.DEFINE_integer(
-    "max_seq_length", 512,
+    "max_seq_length", 128,
     help="The maximum total sequence length after WordPiece tokenization. "
     "Sequences longer than this will be truncated, and sequences shorter "
     "than this will be padded.")
@@ -299,6 +299,9 @@ class InputFeatures(object):
     self.label_id = label_id
 
   def get_dict_features(self):
+    '''
+    This function provides the feature keys for the serialization
+    '''
     return {
         "input_ids": _create_int_feature(self.input_ids),
         "input_mask": _create_int_feature(self.input_mask),

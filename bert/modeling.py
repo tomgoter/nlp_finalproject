@@ -136,14 +136,13 @@ def bert_embedding(config,
   with tf.variable_scope("bert", scope, reuse=tf.AUTO_REUSE):
     with tf.variable_scope("embeddings"):
       # Perform embedding lookup on the word ids.
-      tf.logging.info("Looking up embeddings using the embedding_lookup funcion")
+      tf.logging.debug("Looking up embeddings using the embedding_lookup funcion")
       (embedding_output, embedding_table) = embedding_lookup(
           input_ids=input_ids,
           vocab_size=config.vocab_size,
           embedding_size=config.hidden_size,
           initializer_range=config.initializer_range,
-          word_embedding_name="word_embeddings",
-          use_one_hot_embeddings=use_one_hot_embeddings)
+          word_embedding_name="word_embeddings")
 
       # Add positional embeddings and token type embeddings, then layer
       # normalize and perform dropout.
@@ -239,7 +238,6 @@ def bert_model(config,
                token_type_ids=None,
                input_embedding=None,
                output_type="pooled",
-               use_one_hot_embeddings=True,
                scope=None):
   """doc."""
 
@@ -253,12 +251,12 @@ def bert_model(config,
         input_ids,
         input_mask,
         token_type_ids,
-        use_one_hot_embeddings,
         scope)
 
     if output_type == "embedding":
       return embedding_output, embedding_table
-
+  
+  # Calculate the attention
   sequence_output = bert_attention(
       config,
       is_training,
@@ -348,7 +346,7 @@ def dropout(input_tensor, dropout_prob):
   if dropout_prob is None or dropout_prob == 0.0:
     return input_tensor
   
-  tf.logging.info("Adding dropout to layer at rate of {:.2f}".format(dropout_prob))
+  tf.logging.debug("Adding dropout to layer at rate of {:.2f}".format(dropout_prob))
   
   # Changed this to use rate instead of keep_prob as keep_prob is deprecated
   output = tf.nn.dropout(input_tensor, rate = dropout_prob)
@@ -357,7 +355,7 @@ def dropout(input_tensor, dropout_prob):
 
 def layer_norm(input_tensor, name=None):
   """Run layer normalization on the last dimension of the tensor."""
-  tf.logging.info("Normalizing layer - centering and scaling")
+  tf.logging.debug("Normalizing layer - centering and scaling")
   return tf.contrib.layers.layer_norm(
       inputs=input_tensor, begin_norm_axis=-1, begin_params_axis=-1, scope=name)
 
@@ -378,8 +376,7 @@ def embedding_lookup(input_ids,
                      vocab_size,
                      embedding_size=128,
                      initializer_range=0.02,
-                     word_embedding_name="word_embeddings",
-                     use_one_hot_embeddings=False):
+                     word_embedding_name="word_embeddings"):
   """Looks up words embeddings for id tensor.
 
   Args:
@@ -389,9 +386,6 @@ def embedding_lookup(input_ids,
     embedding_size: int. Width of the word embeddings.
     initializer_range: float. Embedding initialization range.
     word_embedding_name: string. Name of the embedding table.
-    use_one_hot_embeddings: bool. If True, use one-hot method for word
-      embeddings. If False, use `tf.nn.embedding_lookup()`. One hot is better
-      for TPUs.
 
   Returns:
     float Tensor of shape [batch_size, seq_length, embedding_size].
@@ -410,17 +404,11 @@ def embedding_lookup(input_ids,
       shape=[vocab_size, embedding_size],
       initializer=create_initializer(initializer_range))
 
-  if use_one_hot_embeddings:
-    flat_input_ids = tf.reshape(input_ids, [-1])
-    one_hot_input_ids = tf.one_hot(flat_input_ids, depth=vocab_size)
-    output = tf.matmul(one_hot_input_ids, embedding_table)
-  else:
-    output = tf.nn.embedding_lookup(embedding_table, input_ids)
+  output = tf.nn.embedding_lookup(embedding_table, input_ids)
 
   input_shape = get_shape_list(input_ids)
 
-  output = tf.reshape(output,
-                      input_shape[0:-1] + [input_shape[-1] * embedding_size])
+  output = tf.reshape(output, input_shape[0:-1] + [input_shape[-1] * embedding_size])
   return (output, embedding_table)
 
 
@@ -670,6 +658,7 @@ def attention_layer(from_tensor,
   to_tensor_2d = reshape_to_matrix(to_tensor)
 
   # `query_layer` = [B*F, N*H]
+  
   query_layer = tf.layers.dense(
       from_tensor_2d,
       num_attention_heads * size_per_head,
