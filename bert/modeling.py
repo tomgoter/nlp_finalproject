@@ -96,6 +96,7 @@ class BertConfig(object):
       text = reader.read()
     config = cls.from_dict(json.loads(text))
     if model_dropout != -1:
+      tf.logging.info("Updating dropout to {}".format(model_dropout))
       config.hidden_dropout_prob = model_dropout
       config.attention_probs_dropout_prob = model_dropout
     return config
