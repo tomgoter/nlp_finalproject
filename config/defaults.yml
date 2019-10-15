@@ -1,0 +1,35 @@
+# YAML Config File for BERT Finetuned Models
+
+bert_config_file: "./bert_pretrained/bert_base/bert_config.json"
+vocab_file: "./bert_pretrained/bert_base/vocab.txt"
+init_checkpoint: "./bert_pretrained/bert_base/bert_model.ckpt"
+task_name: "GoT"
+
+### Directory locations:
+sup_train_data_dir: None
+eval_data_dir: None
+unsup_data_dir: None
+    
+### Model configuration
+use_one_hot_embeddings: True
+max_seq_length: 128
+model_dropout: -1 
+
+### Training hyper-parameters
+train_batch_size: 32
+eval_batch_size: 8
+save_checkpoints_num: 20
+iterations_per_loop: 200
+
+### Optimizer hyperparameters
+learning_rate: 2e-5
+clip_norm: 1.0
+
+### UDA Options - only important if using UDA
+aug_ops: ""
+aug_copy: -1
+unsup_ratio : 0
+uda_coeff : 1 
+tsa: "" 
+uda_softmax_temp : -1
+uda_confidence_thresh : -1
