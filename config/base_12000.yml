@@ -4,7 +4,7 @@ do_train: True
 
 do_eval : True
 
-sup_train_data_dir: './Data/proc_data/GoT/train_20'
+sup_train_data_dir: './Data/proc_data/GoT/train_12000'
 
 eval_data_dir:  './Data/proc_data/GoT/dev'
 
@@ -16,10 +16,10 @@ init_checkpoint:  './bert_pretrained/bert_base/bert_model.ckpt'
 
 task_name:  'GoT'
 
-model_dir:  'model/base_20' 
+model_dir:  'model/base_12000' 
 
-num_train_steps:  50 
+num_train_steps:  3000 
 
-learning_rate:  0.00003
+learning_rate:  0.00004
 
-num_warmup_steps:  20 
+num_warmup_steps:  300 
