@@ -350,11 +350,19 @@ def model_fn_builder(
         loss = tf.metrics.mean(per_example_loss)
 
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+        logging.debug("Predictions: {}".format(predictions))
+        logging.debug("Labels: {}".format(label_ids))
         accuracy = tf.metrics.accuracy(label_ids, predictions)
+        per_class_accuracy = tf.metrics.mean_per_class_accuracy(label_ids, predictions, num_labels)
+        precision = tf.metrics.precision(label_ids, predictions)
+        recall = tf.metrics.recall(label_ids, predictions)
 
         ret_dict = {
             "eval_classify_loss": loss,
-            "eval_classify_accuracy": accuracy
+            "eval_classify_accuracy": accuracy,
+            "eval_precision": precision,
+            "eval_recall": recall,
+            "eval_mpca":per_class_accuracy
         }
 
         return ret_dict
