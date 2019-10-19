@@ -132,7 +132,7 @@ def get_adam_optimizer(learning_rate):
 
 
 def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps,
-                     clip_norm, global_step, freeze_layers=True, num_classes=5):
+                     clip_norm, global_step, freeze_layers=(True, 11), num_classes=5):
   """Creates an optimizer training op."""
 
   learning_rate = tf.constant(value=init_lr, shape=[], dtype=tf.float32)
@@ -165,14 +165,14 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps,
   tvars = tf.compat.v1.trainable_variables()
   
   # Freeze all the layers but the output
-  if freeze_layers:
+  if freeze_layers[0]:
     layers = [tvar for tvar in tvars if tvar.name.startswith('bert')]
     # Train pooler
     frozen_layers = layers[:-2]
     # Train embedding layer
     frozen_layers = [fl for fl in frozen_layers if fl.name.find('embedding') < 0]
     # Train last attention layer
-    frozen_layers = [fl for fl in frozen_layers if fl.name.find('layer_11') < 0]
+    frozen_layers = [fl for fl in frozen_layers if fl.name.find('layer_{}'.format(freeze_layers[1])) < 0]
     tf.logging.debug("Freezing {}".format(frozen_layers))
     tvars = [tvar for tvar in tvars if tvar not in frozen_layers]
 
