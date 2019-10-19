@@ -1,0 +1,31 @@
+# YAML Config File for BERT Finetuned Models
+
+do_train: True
+
+do_eval : True
+
+sup_train_data_dir: './Data/proc_data/GoT/train_5000'
+
+eval_data_dir:  './Data/proc_data/GoT/dev'
+
+bert_config_file:  './bert_pretrained/bert_base/bert_config.json'
+
+vocab_file:  './bert_pretrained/bert_base/vocab.txt'
+
+init_checkpoint:  './bert_pretrained/bert_base/bert_model.ckpt'
+
+task_name:  'GoT'
+
+model_dir:  'model/shuffle_5000_bs10' 
+
+num_train_steps:  3000 
+
+train_batch_size: 10
+
+learning_rate:  0.00003
+
+num_warmup_steps:  300 
+
+hidden_dropout: 0.1
+
+attention_dropout: 0.1

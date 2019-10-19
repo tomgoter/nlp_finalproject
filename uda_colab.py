@@ -22,14 +22,12 @@ import collections
 import re
 import tensorflow as tf
 
-from bert import modeling
-from bert import optimization
+from bpath import modeling
+from bpath import optimization
 
 from absl import app
 from absl import flags
 from absl import logging
-
-FLAGS = flags.FLAGS
 
 
 def kl_for_log_probs(log_p, log_q):
@@ -66,10 +64,10 @@ def hidden_to_logits(hidden, is_training, num_classes, scope):
 
 
 def get_tsa_threshold(schedule, global_step, num_train_steps, start, end):
-  
+
   # Fraction of the way through the training
   training_progress = tf.cast(global_step, tf.float32) / tf.cast(num_train_steps, tf.float32)
-  
+
   # Calculate threshold based on the annealing schedule
   if schedule == "linear_schedule":
     threshold = training_progress
@@ -229,8 +227,7 @@ def model_fn_builder(
     uda_coeff,
     tsa,
     print_feature=True,
-    print_structure=True,
-    freeze_layers=True):
+    print_structure=True):
   """Returns `model_fn` ."""
 
   def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
@@ -243,7 +240,7 @@ def model_fn_builder(
     is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
     global_step = tf.train.get_or_create_global_step()
-    
+
     ##### Classification objective
     label_ids = features["label_ids"]
     label_ids = tf.reshape(label_ids, [-1])
@@ -311,16 +308,7 @@ def model_fn_builder(
 
     ##### Initialize variables with pre-trained models
     tvars = tf.compat.v1.trainable_variables()
-    if freeze_layers:
-      layers = [tvar for tvar in tvars if tvar.name.startswith('bert')]
-      # Train pooler
-      frozen_layers = layers[:-2]
-      # Train embedding layer
-      frozen_layers = [fl for fl in frozen_layers if fl.name.find('embedding') < 0]
-      # Train last attention layer
-      frozen_layers = [fl for fl in frozen_layers if fl.name.find('layer_11') < 0]
-      tvars = [tvar for tvar in tvars if tvar not in frozen_layers]
-    
+
     scaffold_fn = None
     if init_checkpoint:
       (assignment_map,
@@ -347,8 +335,8 @@ def model_fn_builder(
           total_loss, learning_rate, num_train_steps, num_warmup_steps,
           clip_norm, global_step)
       # Needed to cast the learning rate from the dictionary from a string to a float
-      metric_dict["learning_rate"] = tf.cast(curr_lr, tf.float32)      
-     
+      metric_dict["learning_rate"] = tf.cast(curr_lr, tf.float32)
+
       # Specify the output from the estimator. train_op applies the gradients and advances the step
       output_spec = tf.estimator.EstimatorSpec(
           mode=mode,
@@ -362,19 +350,11 @@ def model_fn_builder(
         loss = tf.metrics.mean(per_example_loss)
 
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-        logging.debug("Predictions: {}".format(predictions))
-        logging.debug("Labels: {}".format(label_ids))
         accuracy = tf.metrics.accuracy(label_ids, predictions)
-        per_class_accuracy = tf.metrics.mean_per_class_accuracy(label_ids, predictions, num_labels)
-        precision = tf.metrics.precision(label_ids, predictions)
-        recall = tf.metrics.recall(label_ids, predictions)
 
         ret_dict = {
             "eval_classify_loss": loss,
-            "eval_classify_accuracy": accuracy,
-            "eval_precision": precision,
-            "eval_recall": recall,
-            "eval_mpca":per_class_accuracy
+            "eval_classify_accuracy": accuracy
         }
 
         return ret_dict
@@ -391,4 +371,3 @@ def model_fn_builder(
     return output_spec
 
   return model_fn
-

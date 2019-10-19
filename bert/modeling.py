@@ -89,16 +89,19 @@ class BertConfig(object):
     return config
 
   @classmethod
-  def from_json_file(cls, json_file, model_dropout):
+  def from_json_file(cls, json_file, hidden_dropout, attention_dropout):
     """Constructs a `BertConfig` from a json file of parameters."""
     tf.logging.info("Setting up BERT Config using data from {}".format(json_file))
     with tf.io.gfile.GFile(json_file, "r") as reader:
       text = reader.read()
     config = cls.from_dict(json.loads(text))
-    if model_dropout != -1:
-      tf.logging.info("Updating dropout to {}".format(model_dropout))
-      config.hidden_dropout_prob = model_dropout
-      config.attention_probs_dropout_prob = model_dropout
+    if hidden_dropout != -1:
+      tf.logging.info("Updating FF layer dropout to {}".format(hidden_dropout))
+      # Changed to allow for different
+      config.hidden_dropout_prob = hidden_dropout
+    if attention_dropout != -1:
+      tf.logging.info("Updating attention layer dropout to {}".format(attention_dropout))
+      config.attention_probs_dropout_prob = attention_dropout
     return config
 
   def to_dict(self):
@@ -856,7 +859,7 @@ def transformer_model(input_tensor,
               attention_output,
               hidden_size,
               kernel_initializer=create_initializer(initializer_range))
-          attention_output = dropout(attention_output, hidden_dropout_prob)
+          attention_output = dropout(attention_output, attention_probs_dropout_prob)
           attention_output = layer_norm(attention_output + layer_input)
 
       # The activation is only applied to the "intermediate" hidden layer.

@@ -125,13 +125,15 @@ def get_aug_files(data_base_path, aug_ops, aug_copy):
   return total_data_files
 
 
-def get_training_dataset(total_data_files, batch_size, is_training,feature_specs):
+def get_training_dataset(total_data_files, batch_size, is_training,
+                         shuffle_buffer_size,feature_specs):
   """
   Simplified version of original function. Handles files serially. Not a big
   deal because we only ever load in <4 files
   """
   d = tf.data.TFRecordDataset(total_data_files)
   tf.logging.debug("{}".format(d))
+  d = d.shuffle(buffer_size=shuffle_buffer_size)
   d = d.map(lambda record: _decode_record(record, feature_specs))
   d = d.batch(batch_size=batch_size, drop_remainder=is_training)
   tf.logging.debug("Returning batch data {}".format(d))
@@ -180,6 +182,7 @@ def training_input_fn_builder(
     aug_copy=None,
     unsup_ratio=None,
     num_threads=8,
+    shuffle_buffer_size=100000,
     prefetch_size=1000, 
     max_seq_len=None):
   
@@ -222,6 +225,7 @@ def training_input_fn_builder(
           sup_total_data_files,
           sup_batch_size,
           is_training,
+          shuffle_buffer_size,
           get_sup_feature_specs(max_seq_len))
       tf.logging.info("Got a batch of training data of size: {}".format(sup_batch_size))
       total_batch_size += sup_batch_size
@@ -234,6 +238,7 @@ def training_input_fn_builder(
             sup_batch_size * unsup_ratio,
             num_threads,
             is_training,
+            shuffle_buffer_size,
             get_unsup_feature_specs(options))
         total_batch_size += sup_batch_size * unsup_ratio * 2
         dataset_list.append(unsup_dst)
