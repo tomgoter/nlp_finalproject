@@ -58,6 +58,11 @@ def load_vocab(vocab_file):
       index += 1
   return vocab
 
+def load_ids(vocab):
+  """Loads the vocabulary dictionary and returns a dictionary of id, word."""
+  ids_dict = {value:key for key, value in vocab.items()}
+  return ids_dict
+
 
 def convert_tokens_to_ids(vocab, tokens):
   """Converts a sequence of tokens into ids using the vocab."""
@@ -65,6 +70,13 @@ def convert_tokens_to_ids(vocab, tokens):
   for token in tokens:
     ids.append(vocab[token])
   return ids
+
+def convert_ids_to_words(ids, ids_dict):
+  """Converts a sequence of ids into words using the vocab."""
+  words = []
+  for id in ids:
+    words.append(ids_dict[id])
+  return words
 
 
 def whitespace_tokenize(text):

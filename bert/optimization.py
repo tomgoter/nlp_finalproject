@@ -127,7 +127,7 @@ def get_adam_optimizer(learning_rate):
       beta_2=0.999,
       epsilon=1e-6,
       exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"])
-  
+
   return optimizer
 
 
@@ -163,7 +163,7 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps,
         (1.0 - is_warmup) * learning_rate + is_warmup * warmup_learning_rate)
 
   tvars = tf.compat.v1.trainable_variables()
-  
+
   # Freeze all the layers but the output
   if freeze_layers[0]:
     layers = [tvar for tvar in tvars if tvar.name.startswith('bert')]
@@ -172,7 +172,8 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps,
     # Train embedding layer
     frozen_layers = [fl for fl in frozen_layers if fl.name.find('embedding') < 0]
     # Train last attention layer
-    frozen_layers = [fl for fl in frozen_layers if fl.name.find('layer_{}'.format(freeze_layers[1])) < 0]
+    for layer_c in range(freeze_layers[1], 12)
+        frozen_layers = [fl for fl in frozen_layers if fl.name.find('layer_{}'.format(layer_c)) < 0]
     tf.logging.debug("Freezing {}".format(frozen_layers))
     tvars = [tvar for tvar in tvars if tvar not in frozen_layers]
 
@@ -187,4 +188,3 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps,
   new_global_step = global_step + 1
   train_op = tf.group(train_op, [global_step.assign(new_global_step)])
   return train_op, learning_rate
-

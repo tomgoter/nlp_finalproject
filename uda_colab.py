@@ -309,7 +309,7 @@ def model_fn_builder(
 
     ##### Initialize variables with pre-trained models
     tvars = tf.compat.v1.trainable_variables()
-    
+
     # Freeze all the layers but the output
     if freeze_layers[0]:
       layers = [tvar for tvar in tvars if tvar.name.startswith('bert')]
@@ -318,7 +318,8 @@ def model_fn_builder(
       # Train embedding layer
       frozen_layers = [fl for fl in frozen_layers if fl.name.find('embedding') < 0]
       # Train last attention layer
-      frozen_layers = [fl for fl in frozen_layers if fl.name.find('layer_{}'.format(freeze_layers[1])) < 0]
+      for layer_c in range(freeze_layers[1], 12)
+          frozen_layers = [fl for fl in frozen_layers if fl.name.find('layer_{}'.format(layer_c)) < 0]
       tf.logging.debug("Freezing {}".format(frozen_layers))
       tvars = [tvar for tvar in tvars if tvar not in frozen_layers]
 

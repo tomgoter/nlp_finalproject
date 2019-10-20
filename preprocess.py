@@ -157,11 +157,12 @@ def get_data_stats(data_stats_dir, sub_set, sup_size, replicas, examples):
 def tokenize_examples(examples, tokenizer):
   logging.info("tokenizing examples")
   for i in range(len(examples)):
-    examples[i].word_list_a = tokenizer.tokenize_to_word(examples[i].text_a)
+    examples[i].word_list_a = tokenizer.tokenize_to_word(examples[i].text_a
     if examples[i].text_b:
       examples[i].word_list_b = tokenizer.tokenize_to_word(examples[i].text_b)
     if i % 10000 == 0:
       logging.info("finished tokenizing example {:d}".format(i))
+  logging.info("First five examples: {}".format(examples[:5]))
   return examples
 
 
@@ -186,7 +187,7 @@ def convert_examples_to_features(
     )
 
   for (ex_index, example) in enumerate(examples):
-    if ex_index % 10000 == 0:
+    if ex_index % 5000 == 0:
       logging.info("processing {:d}".format(ex_index))
     tokens_a = tokenizer.tokenize_to_wordpiece(example.word_list_a)
     tokens_b = None
