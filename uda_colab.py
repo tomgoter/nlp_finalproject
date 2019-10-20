@@ -360,15 +360,16 @@ def model_fn_builder(
 
       def clas_metric_fn(per_example_loss, label_ids, logits):
         ## classification loss & accuracy
-        loss = tf.metrics.mean(per_example_loss)
+        loss = tf.compat.v1.metrics.mean(per_example_loss)
 
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
         logging.debug("Predictions: {}".format(predictions))
         logging.debug("Labels: {}".format(label_ids))
-        accuracy = tf.metrics.accuracy(label_ids, predictions)
-        per_class_accuracy = tf.metrics.mean_per_class_accuracy(label_ids, predictions, num_labels)
-        precision = tf.metrics.precision(label_ids, predictions)
-        recall = tf.metrics.recall(label_ids, predictions)
+        accuracy = tf.compat.v1.metrics.accuracy(label_ids, predictions)
+        per_class_accuracy = tf.compat.v1.metrics.mean_per_class_accuracy(
+          label_ids, predictions, num_labels)
+        precision = tf.compat.v1.metrics.precision(label_ids, predictions)
+        recall = tf.compat.v1.metrics.recall(label_ids, predictions)
 
         ret_dict = {
             "eval_classify_loss": loss,

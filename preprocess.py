@@ -139,17 +139,17 @@ def get_data_stats(data_stats_dir, sub_set, sup_size, replicas, examples):
     logging.info("loading data stats from {:s}".format(data_stats_dir))
     data_stats = {}
     for key in keys:
-      with tf.io.read_file(
-          "{}/{}.json".format(data_stats_dir, key)) as inf:
-        data_stats[key] = json.load(inf)
+      with tf.io.gfile.GFile(data_stats_path, "r") as reader:
+        text = reader.read()
+      data_stats[key] = json.loads(text)
   else:
     assert sup_size == -1, "should use the complete set to get tf_idf"
     assert replicas == 1, "should use the complete set to get tf_idf"
     data_stats = word_level_augment.get_data_stats(examples)
     tf.io.gfile.makedirs(data_stats_dir)
     for key in keys:
-      with tf.io.read_file("{}/{}.json".format(data_stats_dir, key), "w") as ouf:
-        json.dump(data_stats[key], ouf)
+      tf.io.write_file("{}/{}.json".format(data_stats_dir, key),
+        json.dumps(data_stats[key]))
     logging.info("dumped data stats to {:s}".format(data_stats_dir))
   return data_stats
 
@@ -492,6 +492,8 @@ def proc_and_save_unsup_data(
 
   logging.info("getting augmented examples")
   aug_examples = copy.deepcopy(ori_examples)
+  
+  # Doesn't do anything for tf-idf augmentation
   aug_examples = sent_level_augment.run_augment(
       aug_examples, aug_ops, sub_set,
       aug_copy_num,

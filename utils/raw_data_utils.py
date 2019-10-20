@@ -74,18 +74,10 @@ class GoTProcessor(object):
     """See base class."""
     if unsup_set == "unsup_in":
       return self._create_examples(
-          pd.read_pickle(
-              os.path.join(raw_data_dir, "train.csv"),
-              quotechar="\"",
-              delimiter=","),
+          pd.read_pickle(os.path.join(raw_data_dir, "train", "train.pkl")),
           "unsup_in", skip_unsup=False)
     else:
-      return self._create_examples(
-          self._read_tsv(
-              os.path.join(raw_data_dir, "{:s}.csv".format(unsup_set)),
-              quotechar="\"",
-              delimiter=","),
-          unsup_set, skip_unsup=False)
+      pass
 
   def _create_examples(self, df, set_type, skip_unsup=True,
                        only_unsup=False):
