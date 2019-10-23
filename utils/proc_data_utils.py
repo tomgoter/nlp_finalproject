@@ -233,7 +233,7 @@ def training_input_fn_builder(
       dataset_list.append(sup_dst)
 
       ## only consider unsupervised data when supervised data is considered
-      if unsup_data_base_path is not None and options['unsup_ratio'] > 0:
+      if unsup_data_base_path is not None and unsup_ratio > 0:
         unsup_dst = get_training_dataset(
             unsup_total_data_files,
             sup_batch_size * unsup_ratio,
