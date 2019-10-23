@@ -237,7 +237,6 @@ def training_input_fn_builder(
         unsup_dst = get_training_dataset(
             unsup_total_data_files,
             sup_batch_size * unsup_ratio,
-            num_threads,
             is_training,
             shuffle_buffer_size,
             get_unsup_feature_specs(max_seq_len))
