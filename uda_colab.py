@@ -80,6 +80,8 @@ def get_tsa_threshold(schedule, global_step, num_train_steps, start, end):
     scale = 5
     # [1 - exp(0), 1 - exp(-5)] = [0, 0.99]
     threshold = 1 - tf.exp((-training_progress) * scale)
+  else:
+    "Check schedule - must be linear_schedule, exp_schedule or log_schedule"
   return threshold * (end - start) + start
 
 
@@ -95,6 +97,8 @@ def create_model(
     unsup_ratio,
     global_step,
     num_train_steps,
+    uda_softmax_temp,
+    uda_confidence_thresh
     ):
 
   num_sample = input_ids.shape[0].value
@@ -162,18 +166,18 @@ def create_model(
       ori_log_probs = log_probs[ori_start : ori_end]
       aug_log_probs = log_probs[aug_start : aug_end]
       unsup_loss_mask = 1
-      if FLAGS.uda_softmax_temp != -1:
+      if uda_softmax_temp != -1:
         tgt_ori_log_probs = tf.nn.log_softmax(
-            clas_logits[ori_start : ori_end] / FLAGS.uda_softmax_temp,
+            clas_logits[ori_start : ori_end] / uda_softmax_temp,
             axis=-1)
         tgt_ori_log_probs = tf.stop_gradient(tgt_ori_log_probs)
       else:
         tgt_ori_log_probs = tf.stop_gradient(ori_log_probs)
 
-      if FLAGS.uda_confidence_thresh != -1:
+      if uda_confidence_thresh != -1:
         largest_prob = tf.reduce_max(tf.exp(ori_log_probs), axis=-1)
         unsup_loss_mask = tf.cast(tf.greater(
-            largest_prob, FLAGS.uda_confidence_thresh), tf.float32)
+            largest_prob, uda_confidence_thresh), tf.float32)
         unsup_loss_mask = tf.stop_gradient(unsup_loss_mask)
 
       per_example_kl_loss = kl_for_log_probs(
@@ -226,6 +230,8 @@ def model_fn_builder(
     unsup_ratio,
     uda_coeff,
     tsa,
+    uda_softmax_temp,
+    uda_confidence_thresh,
     print_feature=True,
     print_structure=True,
     freeze_layers=(True,11)):
@@ -281,6 +287,8 @@ def model_fn_builder(
          unsup_ratio=unsup_ratio,
          global_step=global_step,
          num_train_steps=num_train_steps,
+         uda_softmax_temp=uda_softmax_temp,
+         uda_confidence_thresh=uda_confidence_thresh
          )
 
     ##### Aggregate losses into total_loss
