@@ -72,7 +72,7 @@ def get_sup_feature_specs_eval(max_seq_len):
   return feature_specs
 
 
-def get_unsup_feature_specs(options):
+def get_unsup_feature_specs(max_seq_len):
   """
   This function creates a dictionary which maps feature names to 
   Fixed Length Features of the appropriate dimensions.
@@ -240,7 +240,7 @@ def training_input_fn_builder(
             num_threads,
             is_training,
             shuffle_buffer_size,
-            get_unsup_feature_specs(options))
+            get_unsup_feature_specs(max_seq_len))
         total_batch_size += sup_batch_size * unsup_ratio * 2
         dataset_list.append(unsup_dst)
         tf.logging.info("unsup batch size: %d", (sup_batch_size * unsup_ratio))
