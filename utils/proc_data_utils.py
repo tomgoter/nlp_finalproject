@@ -108,6 +108,7 @@ def get_aug_files(data_base_path, aug_ops, aug_copy):
       if copy_dir[-5:] != 'Store':
         copy_num = int(copy_dir.strip("/"))
         tf.logging.info("Using copy number {}".format(copy_num))
+        tf.logging.info("aug_copy: {}".format(aug_copy))
         if copy_num >= aug_copy:
           continue
         exist_copy_num[copy_num] = 1
