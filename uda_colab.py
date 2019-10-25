@@ -139,7 +139,7 @@ def create_model(
     if tsa:
       logging.info("Applying TSA")
       # Starting threshold is just the inverse number of labels.
-      tsa_start = 1. / num_labels+
+      tsa_start = 1. / num_labels
       tsa_threshold = get_tsa_threshold(
           tsa, global_step, num_train_steps,
           tsa_start, end=1)
