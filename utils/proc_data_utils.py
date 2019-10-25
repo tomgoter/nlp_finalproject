@@ -105,7 +105,7 @@ def get_aug_files(data_base_path, aug_ops, aug_copy):
     for copy_dir in tf.io.gfile.listdir(os.path.join(
         data_base_path, sub_policy)):
       tf.logging.info("Looking at {}".format(copy_dir))
-      if copy_dir[:3] != '.DS':
+      if copy_dir[-5:] != 'Store':
         copy_num = int(copy_dir.strip("/"))
         tf.logging.info("Using copy number {}".format(copy_num))
         if copy_num >= aug_copy:
