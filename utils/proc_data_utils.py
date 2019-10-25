@@ -111,11 +111,13 @@ def get_aug_files(data_base_path, aug_ops, aug_copy):
         if copy_num >= aug_copy:
           continue
         exist_copy_num[copy_num] = 1
+        tf.logging.info("exist_copy_num: ".format(exist_copy_num))
         data_record_path = os.path.join(
             data_base_path, sub_policy, copy_dir, "tf_examples.tfrecord*")
         data_files = tf.contrib.slim.parallel_reader.get_data_files(
             data_record_path)
         sub_policy_data_files += data_files
+        tf.logging.info("Current number of files to process: {}".format(len(sub_policy_data_files)))
     if len(exist_copy_num) < aug_copy * 0.9:
       tf.logging.info("not enough copies for aug op: {:s}".format(aug_ops))
       tf.logging.info("found files: {:s}".format(
