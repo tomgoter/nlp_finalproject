@@ -81,7 +81,7 @@ def get_tsa_threshold(schedule, global_step, num_train_steps, start, end):
     # [1 - exp(0), 1 - exp(-5)] = [0, 0.99]
     threshold = 1 - tf.exp((-training_progress) * scale)
   else:
-    print()"Check schedule - must be linear_schedule, exp_schedule or log_schedule")
+    print("Check schedule - must be linear_schedule, exp_schedule or log_schedule")
   return threshold * (end - start) + start
 
 
