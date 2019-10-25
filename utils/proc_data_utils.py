@@ -106,6 +106,7 @@ def get_aug_files(data_base_path, aug_ops, aug_copy):
         data_base_path, sub_policy)):
       if os.path.isdir(copy_dir):
         copy_num = int(copy_dir.strip("/"))
+        tf.logging.info("Using copy number {}".format(copy_num))
         if copy_num >= aug_copy:
           continue
         exist_copy_num[copy_num] = 1
@@ -123,6 +124,7 @@ def get_aug_files(data_base_path, aug_ops, aug_copy):
     assert len(exist_copy_num) > aug_copy * 0.9
     total_data_files += sub_policy_data_files
   np.random.shuffle(total_data_files)
+  tf.logging.info("Number of data files to process: {}".format(len(total_data_files)))
   return total_data_files
 
 
