@@ -81,7 +81,7 @@ def get_tsa_threshold(schedule, global_step, num_train_steps, start, end):
     # [1 - exp(0), 1 - exp(-5)] = [0, 0.99]
     threshold = 1 - tf.exp((-training_progress) * scale)
   else:
-    "Check schedule - must be linear_schedule, exp_schedule or log_schedule"
+    print()"Check schedule - must be linear_schedule, exp_schedule or log_schedule")
   return threshold * (end - start) + start
 
 
@@ -146,6 +146,7 @@ def create_model(
 
       larger_than_threshold = tf.greater(
           correct_label_probs, tsa_threshold)
+      logging.info("Using TSA Threshold of {}".format(tsa_threshold))
       loss_mask = loss_mask * (1 - tf.cast(larger_than_threshold, tf.float32))
     else:
       tsa_threshold = 1
