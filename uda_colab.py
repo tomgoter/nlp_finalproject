@@ -139,14 +139,13 @@ def create_model(
     if tsa:
       logging.info("Applying TSA")
       # Starting threshold is just the inverse number of labels.
-      tsa_start = 1. / (num_labels+1)
+      tsa_start = 1. / num_labels+
       tsa_threshold = get_tsa_threshold(
           tsa, global_step, num_train_steps,
           tsa_start, end=1)
 
       larger_than_threshold = tf.greater(
           correct_label_probs, tsa_threshold)
-      logging.info("Using TSA Threshold of {}".format(tsa_threshold))
       loss_mask = loss_mask * (1 - tf.cast(larger_than_threshold, tf.float32))
     else:
       tsa_threshold = 1
