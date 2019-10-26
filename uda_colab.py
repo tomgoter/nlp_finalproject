@@ -419,7 +419,7 @@ def model_fn_builder(
         
         return ret_dict
 
-      eval_metrics = clas_metric_fn(per_example_loss, label_ids, logits)
+      eval_metrics = (clas_metric_fn, [per_example_loss, label_ids, logits])
 
 #       output_spec = tf.estimator.EstimatorSpec(
 #           mode=mode,
