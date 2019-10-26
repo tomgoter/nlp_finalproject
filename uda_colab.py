@@ -239,7 +239,7 @@ def model_fn_builder(
     uda_confidence_thresh,
     print_feature=True,
     print_structure=True,
-    freeze_layers=(True,11)):
+    freeze_layers=(False,)):
   """Returns `model_fn` ."""
 
   def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
@@ -351,6 +351,7 @@ def model_fn_builder(
         scaffold_fn = tpu_scaffold
       else:
         tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
+    
     else:
       initialized_variable_names = {}
 
@@ -369,7 +370,7 @@ def model_fn_builder(
       ## Create optimizer for training
       train_op, curr_lr = optimization.create_optimizer(
           total_loss, learning_rate, num_train_steps, num_warmup_steps,
-          clip_norm, global_step)
+          clip_norm, global_step, freeze_layers, num_labels, use_tpu)
       # Needed to cast the learning rate from the dictionary from a string to a float
       metric_dict["learning_rate"] = tf.cast(curr_lr, tf.float32)
 

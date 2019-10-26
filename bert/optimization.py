@@ -115,7 +115,7 @@ class AdamWeightDecayOptimizer(tf.train.Optimizer):
     return param_name
 
 
-def get_adam_optimizer(learning_rate):
+def get_adam_optimizer(learning_rate, use_tpu):
   """get adam optimizer."""
   # It is recommended that you use this optimizer for fine tuning, since this
   # is how the model was trained (note that the Adam m/v variables are NOT
@@ -135,7 +135,7 @@ def get_adam_optimizer(learning_rate):
 
 
 def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps,
-                     clip_norm, global_step, freeze_layers=(True, 11), num_classes=5):
+                     clip_norm, global_step, freeze_layers, num_classes, use_tpu):
   """Creates an optimizer training op."""
 
   learning_rate = tf.constant(value=init_lr, shape=[], dtype=tf.float32)
@@ -184,7 +184,7 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps,
   # the model was pre-trained with grad clip 1.0.
   (grads, _) = tf.clip_by_global_norm(grads, clip_norm=clip_norm)
 
-  optimizer = get_adam_optimizer(learning_rate)
+  optimizer = get_adam_optimizer(learning_rate, use_tpu)
   train_op = optimizer.apply_gradients(
       zip(grads, tvars), global_step=global_step)
 
