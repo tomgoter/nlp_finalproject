@@ -93,6 +93,7 @@ def create_model(
     input_type_ids,
     labels,
     num_labels,
+    use_one_hot_embeddings,
     tsa,
     unsup_ratio,
     global_step,
@@ -115,7 +116,8 @@ def create_model(
       is_training=is_training,
       input_ids=input_ids,
       input_mask=input_mask,
-      token_type_ids=input_type_ids)
+      token_type_ids=input_type_ids,
+      use_one_hot_embeddings=use_one_hot_embeddings)
 
   clas_logits = hidden_to_logits(
       hidden=pooled,

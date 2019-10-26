@@ -146,7 +146,8 @@ def bert_embedding(config,
           vocab_size=config.vocab_size,
           embedding_size=config.hidden_size,
           initializer_range=config.initializer_range,
-          word_embedding_name="word_embeddings")
+          word_embedding_name="word_embeddings",
+          use_one_hot_embeddings=use_one_hot_embeddings)
 
       # Add positional embeddings and token type embeddings, then layer
       # normalize and perform dropout.
@@ -242,6 +243,7 @@ def bert_model(config,
                token_type_ids=None,
                input_embedding=None,
                output_type="pooled",
+               use_one_hot_embeddings=True,
                scope=None):
   """doc."""
 
@@ -255,6 +257,7 @@ def bert_model(config,
         input_ids,
         input_mask,
         token_type_ids,
+        use_one_hot_embeddings,
         scope)
 
     if output_type == "embedding":
@@ -380,7 +383,8 @@ def embedding_lookup(input_ids,
                      vocab_size,
                      embedding_size=128,
                      initializer_range=0.02,
-                     word_embedding_name="word_embeddings"):
+                     word_embedding_name="word_embeddings",
+                     use_one_hot_embeddings=False):
   """Looks up words embeddings for id tensor.
 
   Args:
@@ -408,7 +412,13 @@ def embedding_lookup(input_ids,
       shape=[vocab_size, embedding_size],
       initializer=create_initializer(initializer_range))
 
-  output = tf.nn.embedding_lookup(embedding_table, input_ids)
+  if use_one_hot_embeddings:
+    flat_input_ids = tf.reshape(input_ids, [-1])
+    one_hot_input_ids = tf.one_hot(flat_input_ids, depth=vocab_size)
+    output = tf.matmul(one_hot_input_ids, embedding_table)
+  else:
+    output = tf.nn.embedding_lookup(embedding_table, input_ids)
+
 
   input_shape = get_shape_list(input_ids)
 
