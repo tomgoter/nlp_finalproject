@@ -165,7 +165,7 @@ def evaluation_input_fn_builder(data_base_path, task, prefetch_size=1000, option
       task, " ".join(total_data_files)))
 
   def input_fn(params):
-    batch_size = params["eval_batch_size"]
+    batch_size = params["batch_size"]
 
     if task == "clas":
       dataset = get_evaluation_dataset(
@@ -216,7 +216,7 @@ def training_input_fn_builder(
 
   def input_fn(params):
     """The `input_fn` for our Esimator."""
-    sup_batch_size = params["train_batch_size"]
+    sup_batch_size = params["batch_size"]
     total_batch_size = 0
     tf.logging.info("Supervised batch size: %d", (sup_batch_size))
 
