@@ -128,6 +128,9 @@ def get_adam_optimizer(learning_rate):
       epsilon=1e-6,
       exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"])
 
+  if use_tpu:
+    optimizer = tf.contrib.tpu.CrossShardOptimizer(optimizer)
+  
   return optimizer
 
 
