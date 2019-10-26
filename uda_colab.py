@@ -226,6 +226,8 @@ def model_fn_builder(
     clip_norm,
     num_train_steps,
     num_warmup_steps,
+    use_tpu,
+    use_one_hot_embeddings,
     num_labels,
     unsup_ratio,
     uda_coeff,
@@ -283,6 +285,7 @@ def model_fn_builder(
          input_type_ids=input_type_ids,
          labels=label_ids,
          num_labels=num_labels,
+         use_one_hot_embeddings=use_one_hot_embeddings,
          tsa=tsa,
          unsup_ratio=unsup_ratio,
          global_step=global_step,
@@ -336,7 +339,15 @@ def model_fn_builder(
       (assignment_map,
        initialized_variable_names) = get_assignment_map_from_checkpoint(
            tvars, init_checkpoint)
-      tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
+      
+      if use_tpu:
+        def tpu_scaffold():
+          tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
+          return tf.train.Scaffold()
+
+        scaffold_fn = tpu_scaffold
+      else:
+        tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
     else:
       initialized_variable_names = {}
 
@@ -359,11 +370,25 @@ def model_fn_builder(
       # Needed to cast the learning rate from the dictionary from a string to a float
       metric_dict["learning_rate"] = tf.cast(curr_lr, tf.float32)
 
-      # Specify the output from the estimator. train_op applies the gradients and advances the step
-      output_spec = tf.estimator.EstimatorSpec(
+#       # Specify the output from the estimator. train_op applies the gradients and advances the step
+#       output_spec = tf.estimator.EstimatorSpec(
+#           mode=mode,
+#           loss=total_loss,
+#           train_op=train_op)
+      
+      ## Create host_call for training
+      host_call = tpu_utils.construct_scalar_host_call(
+          metric_dict=metric_dict,
+          model_dir=params["model_dir"],
+          prefix="training/",
+          reduce_fn=tf.reduce_mean)
+
+      output_spec = tf.contrib.tpu.TPUEstimatorSpec(
           mode=mode,
           loss=total_loss,
-          train_op=train_op)
+          train_op=train_op,
+          host_call=host_call,
+          scaffold_fn=scaffold_fn)
 
     elif mode == tf.estimator.ModeKeys.EVAL:
 
@@ -379,7 +404,7 @@ def model_fn_builder(
           label_ids, predictions, num_labels)
         precision = tf.compat.v1.metrics.precision(label_ids, predictions)
         recall = tf.compat.v1.metrics.recall(label_ids, predictions)
-
+        
         ret_dict = {
             "eval_classify_loss": loss,
             "eval_classify_accuracy": accuracy,
@@ -387,17 +412,37 @@ def model_fn_builder(
             "eval_recall": recall,
             "eval_mpca":per_class_accuracy
         }
-
+        
         return ret_dict
 
       eval_metrics = clas_metric_fn(per_example_loss, label_ids, logits)
 
-      output_spec = tf.estimator.EstimatorSpec(
+#       output_spec = tf.estimator.EstimatorSpec(
+#           mode=mode,
+#           loss=total_loss,
+#           eval_metric_ops=eval_metrics)
+      
+      output_spec = tf.contrib.tpu.TPUEstimatorSpec(
           mode=mode,
           loss=total_loss,
-          eval_metric_ops=eval_metrics)
+          eval_metrics=eval_metrics,
+          scaffold_fn=scaffold_fn)
+    
+    elif mode == tf.estimator.ModeKeys.PREDICT:
+
+#       output_spec = tf.estimator.EstimatorSpec(
+#           mode=mode,
+#           loss=None,
+#           predictions=predictions)
+      
+      output_spec = tf.contrib.tpu.TPUEstimatorSpec(
+          mode=mode,
+          loss=None,
+          predictions=predictions,
+          scaffold_fn=scaffold_fn)
+    
     else:
-      raise ValueError("Only TRAIN and EVAL modes are supported: %s" % (mode))
+      raise ValueError("Only TRAIN, PREDICT and  EVAL modes are supported: %s" % (mode))
 
     return output_spec
 
