@@ -247,7 +247,7 @@ def model_fn_builder(
 
     if lmodel == 'BERT':
         def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
-        """The `model_fn` for Estimator."""
+            """The `model_fn` for Estimator."""
             if print_feature:
               logging.info("*** Features ***")
               for name in sorted(features.keys()):
