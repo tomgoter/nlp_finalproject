@@ -73,13 +73,13 @@ def two_stream_loss(options, features, labels, mems, is_training):
   tgt_mask = tf.transpose(features["target_mask"], [1, 0])
 
   # construct xlnet config and save to model_dir
-  xlnet_config = xlnet.XLNetConfig(options)
+  xlnet_config = xlnet_colab.XLNetConfig(options)
   xlnet_config.to_json(os.path.join(options['model_dir'], "config.json"))
 
   # construct run config from FLAGS
-  run_config = xlnet.create_run_config(is_training, False, options)
+  run_config = xlnet_colab.create_run_config(is_training, False, options)
 
-  xlnet_model = xlnet.XLNetModel(
+  xlnet_model = xlnet_colab.XLNetModel(
       xlnet_config=xlnet_config,
       run_config=run_config,
       input_ids=inp_k,
@@ -142,10 +142,10 @@ def get_classification_loss(
   inp_mask = tf.transpose(features["input_mask"], [1, 0])
   label = tf.reshape(features["label_ids"], [bsz_per_core])
 
-  xlnet_config = xlnet.XLNetConfig(json_path=options['model_config_file'])
-  run_config = xlnet.create_run_config(is_training, True, options)
+  xlnet_config = xlnet_colab.XLNetConfig(json_path=options['model_config_file'])
+  run_config = xlnet_colab.create_run_config(is_training, True, options)
 
-  xlnet_model = xlnet.XLNetModel(
+  xlnet_model = xlnet_colab.XLNetModel(
       xlnet_config=xlnet_config,
       run_config=run_config,
       input_ids=inp,
@@ -191,10 +191,10 @@ def get_uda_classification_loss(
   inp_mask = tf.transpose(features["input_mask"], [1, 0])
   label = tf.reshape(features["label_ids"], [bsz_per_core])
 
-  xlnet_config = xlnet.XLNetConfig(json_path=options['model_config_file'])
-  run_config = xlnet.create_run_config(is_training, True, options)
+  xlnet_config = xlnet_colab.XLNetConfig(json_path=options['model_config_file'])
+  run_config = xlnet_colab.create_run_config(is_training, True, options)
 
-  xlnet_model = xlnet.XLNetModel(
+  xlnet_model = xlnet_colab.XLNetModel(
       xlnet_config=xlnet_config,
       run_config=run_config,
       input_ids=inp,
