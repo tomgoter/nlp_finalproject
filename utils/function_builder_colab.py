@@ -232,7 +232,7 @@ def get_uda_classification_loss(
 
   with tf.variable_scope("sup_loss"):
     sup_log_probs = log_probs[:sup_batch_size]
-    one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
+    one_hot_labels = tf.one_hot(labels, depth=n_class, dtype=tf.float32)
     tgt_label_prob = one_hot_labels
 
     per_example_loss = -tf.reduce_sum(tgt_label_prob * sup_log_probs, axis=-1)
