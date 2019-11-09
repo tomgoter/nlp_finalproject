@@ -178,6 +178,7 @@ def get_uda_classification_loss(
     options, features, n_class, is_training, global_step):
   """Loss for downstream classification tasks."""
 
+
   tsa = options['tsa']
   unsup_ratio = options['unsup_ratio']
   num_train_steps = options['num_train_steps']
@@ -190,6 +191,16 @@ def get_uda_classification_loss(
   seg_id = tf.transpose(features["segment_ids"], [1, 0])
   inp_mask = tf.transpose(features["input_mask"], [1, 0])
   label = tf.reshape(features["label_ids"], [bsz_per_core])
+
+  num_sample = inp.shape[0].value
+  logging.info("Batch Size {}".format(num_sample))
+  if is_training:
+    assert num_sample % (1 + 2 * unsup_ratio) == 0
+    sup_batch_size = num_sample // (1 + 2 * unsup_ratio)
+    unsup_batch_size = sup_batch_size * unsup_ratio
+  else:
+    sup_batch_size = num_sample
+    unsup_batch_size = 0
 
   xlnet_config = xlnet_colab.XLNetConfig(json_path=options['model_config_file'])
   run_config = xlnet_colab.create_run_config(is_training, True, options)
