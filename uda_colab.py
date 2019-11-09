@@ -421,14 +421,14 @@ def model_fn_builder(
                 features["ori_input_mask"],
                 features["aug_input_mask"]], 0)
             input_type_ids = tf.concat([
-                features["input_type_ids"],
-                features["ori_input_type_ids"],
-                features["aug_input_type_ids"]], 0)
+                features["segment_ids"],
+                features["ori_isegment_ids"],
+                features["aug_segment_ids"]], 0)
           else:
             logging.info("Creating supervised model")
             input_ids = features["input_ids"]
             input_mask = features["input_mask"]
-            input_type_ids = features["input_type_ids"]
+            input_type_ids = features["segment_ids"]
 
           (sup_loss, unsup_loss, logits,
              per_example_loss, loss_mask,
