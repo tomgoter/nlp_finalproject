@@ -76,7 +76,7 @@ def _truncate_seq_pair_keep_right(tokens_a, tokens_b, max_length):
 
 
 def convert_single_example(ex_index, example, label_list, max_seq_length,
-                              tokenize_fn, aug_ops=None):
+                              tokenize_fn):
   """Converts a single `InputExample` into a single `InputFeatures`."""
 
   if isinstance(example, PaddingInputExample):
@@ -92,17 +92,10 @@ def convert_single_example(ex_index, example, label_list, max_seq_length,
     for (i, label) in enumerate(label_list):
       label_map[label] = i
 
-  if aug_ops:
-    tokens_a = tokenize_fn(" ".join(example.word_list_a))
-    tokens_b = None
-    if example.text_b:
-      tokens_b = tokenize_fn(" ".join(example.word_list_b))
-  else:
-    tokens_a = tokenize_fn(example.text_a)
-    tokens_b = None
-    if example.text_b:
-      tokens_b = tokenize_fn(example.text_b)
-
+  tokens_a = tokenize_fn(example.text_a)
+  tokens_b = None
+  if example.text_b:
+    tokens_b = tokenize_fn(example.text_b)
 
   if tokens_b:
     # Modifies `tokens_a` and `tokens_b` in place so that the total

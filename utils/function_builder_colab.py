@@ -6,7 +6,7 @@ from __future__ import print_function
 import functools
 import os
 import tensorflow as tf
-from xpath import modeling, xlnet
+from xpath import modeling, xlnet_colab
 
 
 
