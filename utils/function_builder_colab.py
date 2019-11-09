@@ -190,7 +190,7 @@ def get_uda_classification_loss(
   inp = tf.transpose(features["input_ids"], [1, 0])
   seg_id = tf.transpose(features["segment_ids"], [1, 0])
   inp_mask = tf.transpose(features["input_mask"], [1, 0])
-  label = tf.reshape(features["label_ids"], [bsz_per_core])
+  labels = tf.reshape(features["label_ids"], [bsz_per_core])
 
   num_sample = features["input_ids"].shape[0].value
   tf.logging.info("Batch Size {}".format(num_sample))
@@ -222,7 +222,7 @@ def get_uda_classification_loss(
 
   logits = modeling.uda_logits(
       hidden=summary,
-      labels=label,
+      labels=labels,
       n_class=n_class,
       initializer=xlnet_model.get_initializer(),
       scope=cls_scope)
