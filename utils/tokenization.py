@@ -24,6 +24,7 @@ import unicodedata
 import six
 import tensorflow as tf
 
+
 def convert_to_unicode(text):
   """Converts `text` to Unicode (if it's not already), assuming utf-8 input."""
   if six.PY3:
@@ -91,11 +92,12 @@ def whitespace_tokenize(text):
 class FullTokenizer(object):
   """Runs end-to-end tokenziation."""
 
-  def __init__(self, vocab_file, do_lower_case=True):
-    self.vocab = load_vocab(vocab_file)
+  def __init__(self, vocab_file=None, do_lower_case=True):
+    if vocab_file:
+        self.vocab = load_vocab(vocab_file)
+        self.wordpiece_tokenizer = WordpieceTokenizer(vocab=self.vocab)
     self.basic_tokenizer = BasicTokenizer(do_lower_case=do_lower_case)
-    self.wordpiece_tokenizer = WordpieceTokenizer(vocab=self.vocab)
-
+    
   def tokenize(self, text):
     split_tokens = []
     for token in self.basic_tokenizer.tokenize(text):
@@ -310,3 +312,13 @@ def printable_text(text):
       raise ValueError("Unsupported string type: %s" % (type(text)))
   else:
     raise ValueError("Not running on Python2 or Python 3?")
+
+
+def xlnet_tokenize_fn(text, spiece_model_file):
+  '''
+  Function used to tokenize XLNet data using an input sentencepiece model (downloaded with xlnet)
+  '''
+  sp = spm.SentencePieceProcessor()
+  sp.Load(spiece_model_file)
+  text = preprocess_text(text, lower=False)
+  return encode_ids(sp, text)

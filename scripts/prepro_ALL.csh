@@ -16,20 +16,38 @@
 
 # Set up cases to process data for
 set bert_vocab_file = ./bert_pretrained/bert_base/vocab.txt
-set sub_set =  ( 'unsup' )
-foreach i      (      1 )
+set sup_size = (     20     200    2000    5000   12000     0      0 )
+set sub_set =  ( 'train' 'train' 'train' 'train' 'train' 'dev' 'test')
+foreach i      (      1       2       3       4       5     6      7 )
 
   # Run the cases
   echo Running on ${sub_set[${i}]} set
+
+  # Flag for training versus non-training
+  if (${sub_set[${i}]} == 'train') then
+      # Preprocess supervised training set
+      echo Supervised set size of ${sup_size[${i}]}
+    python preprocess.py \
+      --raw_data_dir=./Data \
+      --output_base_dir=./Data/proc_data/GoT/${sub_set[${i}]}_${sup_size[${i}]} \
+      --data_type=sup \
+      --sub_set=${sub_set[${i}]} \
+      --sup_size=${sup_size[${i}]} \
+      --vocab_file=$bert_vocab_file \
+      \$@
+  else
+    # Preprocess supervised training set
+    python preprocess.py \
+      --raw_data_dir=./Data \
+      --output_base_dir=./Data/proc_data/GoT/${sub_set[${i}]} \
+      --data_type=sup \
+      --sub_set=${sub_set[${i}]} \
+      --vocab_file=$bert_vocab_file \
+      \$@
+  endif
   
-  # Preprocess unlabeled set
-python preprocess.py \
-  --raw_data_dir=./Data \
-  --output_base_dir=./Data/proc_data/GoT/${sub_set[${i}]} \
-  --data_type=${sub_set[${i}]} \
-  --sub_set=unsup_in \
-  --aug_ops=tf_idf \
-  --aug_copy_num=0 \
-  --vocab_file=$bert_vocab_file \
-  $@
-end
+
+
+
+
+

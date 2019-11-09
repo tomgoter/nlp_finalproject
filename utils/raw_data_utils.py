@@ -46,7 +46,7 @@ class InputExample(object):
     self.text_a = text_a
     self.text_b = text_b
     self.label = label
-    
+
 class DataProcessor(object):
   """Base class for data converters for sequence classification data sets."""
 
@@ -82,7 +82,7 @@ class GoTProcessor(object):
     return self._create_examples(
         pd.read_pickle(os.path.join(raw_data_dir, "dev", "dev.pkl")),
                         "dev")
-    
+
   def get_test_examples(self, raw_data_dir):
     """See base class."""
     return self._create_examples(
@@ -91,7 +91,7 @@ class GoTProcessor(object):
 
   def get_unsup_examples(self, raw_data_dir, unsup_set):
     """See base class."""
-    if unsup_set == "unsup_in":
+    if unsup_set.startswith("unsup"):
       return self._create_examples(
           pd.read_pickle(os.path.join(raw_data_dir, "train", "train.pkl")),
           "unsup_in", skip_unsup=False)
@@ -134,9 +134,3 @@ def get_processor(task_name):
   }
   processor = processors[task_name]()
   return processor
-
-
-
-
-
-

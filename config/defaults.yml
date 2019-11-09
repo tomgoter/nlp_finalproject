@@ -6,9 +6,9 @@ init_checkpoint: "./bert_pretrained/bert_base/bert_model.ckpt"
 task_name: "GoT"
 
 ### Directory locations:
-sup_train_data_dir: None
-eval_data_dir: None
-unsup_data_dir: None
+sup_train_data_dir: False
+eval_data_dir: False
+unsup_data_dir: False
     
 ### Model configuration
 use_one_hot_embeddings: True
@@ -20,10 +20,11 @@ attention_dropout: -1
 train_batch_size: 32
 eval_batch_size: 8
 save_checkpoints_num: 20
+max_save: 5
 iterations_per_loop: 200
 
 ### Optimizer hyperparameters
-learning_rate: 2e-5
+learning_rate: 0.00002
 clip_norm: 1.0
 
 ### UDA Options - only important if using UDA
@@ -34,3 +35,13 @@ uda_coeff : 1
 tsa: "" 
 uda_softmax_temp : -1
 uda_confidence_thresh : -1
+
+# TPUs and machines
+use_tpu: False 
+num_hosts: 1 # How many TPU hosts.
+num_core_per_host: 1
+tpu_job_name: False #TPU worker job name.
+tpu: False # TPU name
+tpu_zone: False # TPU zone.
+gcp_project: False # gcp project.
+master: False # master

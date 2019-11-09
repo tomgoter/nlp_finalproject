@@ -1,0 +1,83 @@
+# YAML Config File for XLNet Finetuned Models
+
+# Model Details
+model_config_path: "./xlnet_pretrained/xlnet_base/xlnet_config.json"
+hidden_dropout: 0.1
+attention_dropatt: 0.1
+clamp_len: -1
+summary_type: "last" # Method used to summarize a sequence into a compact vector.
+use_summ_proj: True # Whether to use projection for summarizing sequences.
+use_bfloat16: False
+
+# Parameter initialization
+init: "normal" # Normal or uniform
+init_std: 0.02 # Initialization std when init is normal.
+init_range: 0.1 # Initialization std when init is uniform.
+
+# I/O paths
+overwrite_data: False # If False, will use cached data if available.
+init_checkpoint: "./xlnet_pretrained/xlnet_base/xlnet_model.ckpt"
+output_dir: "./Data/proc_data/GoT_xlnet" # Output dir for TF records.
+spiece_model_file: "./xlnet_pretrained/xlnet_base/spiece.model"
+model_dir: "" # Directory for saving the finetuned model.
+data_dir: "./Data" # Directory for input data.
+
+### Directory locations:
+sup_train_data_dir: False
+eval_data_dir: False
+unsup_data_dir: False
+
+# TPUs and machines
+use_tpu: False 
+num_hosts: 1 # How many TPU hosts.
+num_core_per_host: 1
+tpu_job_name: False #TPU worker job name.
+tpu: False # TPU name
+tpu_zone: False # TPU zone.
+gcp_project: False # gcp project.
+master: False # master
+iterations_per_loop: 1000 # number of iterations per TPU training loop.
+
+# training
+do_train: False # Whether to do training
+train_steps: 1000 # Number of training steps
+warmup_steps: 0 # number of warmup steps
+learning_rate: 1e-5 # initial learning rate
+lr_layer_decay_rate: 1.0 # MAY NEED TO DO SOMETHING WITH TOP AND LOWER LAYER HERE
+min_lr_ratio: 0.0 # min lr ratio for cos decay.
+clip_norm: 1.0 # Gradient clipping
+max_save: 5 # Max number of checkpoints to save. Use 0 to save all.
+save_checkpoints_num: 20 # Save the model for every save_steps.
+train_batch_size: 8 # Batch size for training - should be able to up to about 56 with 16 GB ram
+weight_decay: 0.00 # Weight decay rate
+adam_epsilon: 0.00000001 # Adam epsilon
+decay_method: "poly" # "poly or cos"
+
+# evaluation
+do_eval: False # whether to do eval
+do_predict: False # whether to do prediction
+predict_threshold: 0 # Threshold for binary prediction.
+eval_split: "dev" #could be dev or test
+eval_batch_size: 8 # batch size for evaluation
+predict_batch_size: 8 # batch size for prediction.
+predict_dir: False # Dir for saving prediction files.
+eval_all_ckpt: True # Eval all ckpts. If False, only evaluate the last one
+predict_ckpt: False # Ckpt path for do_predict. If None, use the last one.
+
+# task specific
+task_name: "GoT" 
+max_seq_length: 128
+shuffle_buffer: 2048 # Buffer size used for shuffle.
+num_passes: 1 # Num passes for processing training data.
+uncased: False # Use uncased.
+cls_scope: False # Classifier layer scope.
+is_regression: False   
+
+### UDA Options - only important if using UDA
+aug_ops: ""
+aug_copy: -1
+unsup_ratio : 0
+uda_coeff : 1 
+tsa: "" 
+uda_softmax_temp : -1
+uda_confidence_thresh : -1

@@ -46,9 +46,9 @@ def _decode_record(record, name_to_features):
 
 
 def get_sup_feature_specs(max_seq_len):
- 
+
   """
-  This function creates a dictionary which maps feature names to 
+  This function creates a dictionary which maps feature names to
   Fixed Length Features of the appropriate dimensions.
   """
   feature_specs = collections.OrderedDict()
@@ -56,12 +56,29 @@ def get_sup_feature_specs(max_seq_len):
   feature_specs["input_mask"] = tf.io.FixedLenFeature([max_seq_len], tf.int64)
   feature_specs["input_type_ids"] = tf.io.FixedLenFeature([max_seq_len], tf.int64)
   feature_specs["label_ids"] = tf.io.FixedLenFeature([1], tf.int64)
+
+  return feature_specs
+
+def get_xlnet_sup_feature_specs(max_seq_len):
+
+  """
+  This function creates a dictionary which maps feature names to
+  Fixed Length Features of the appropriate dimensions.
+  """
+  feature_specs = {
+      "input_ids": tf.FixedLenFeature([max_seq_len], tf.int64),
+      "input_mask": tf.FixedLenFeature([max_seq_len], tf.float32),
+      "segment_ids": tf.FixedLenFeature([max_seq_len], tf.int64),
+      "label_ids": tf.FixedLenFeature([], tf.int64),
+      "is_real_example": tf.FixedLenFeature([], tf.int64),
+  }
+
   return feature_specs
 
 def get_sup_feature_specs_eval(max_seq_len):
- 
+
   """
-  This function creates a dictionary which maps feature names to 
+  This function creates a dictionary which maps feature names to
   Fixed Length Features of the appropriate dimensions.
   """
   feature_specs = collections.OrderedDict()
@@ -74,7 +91,7 @@ def get_sup_feature_specs_eval(max_seq_len):
 
 def get_unsup_feature_specs(max_seq_len):
   """
-  This function creates a dictionary which maps feature names to 
+  This function creates a dictionary which maps feature names to
   Fixed Length Features of the appropriate dimensions.
   """
   feature_specs = collections.OrderedDict()
@@ -100,7 +117,7 @@ def get_aug_files(data_base_path, aug_ops, aug_copy):
   total_data_files = []
   for sub_policy in sub_policy_list:
     sub_policy_data_files = []
-    
+
     exist_copy_num = {}
     for copy_dir in tf.io.gfile.listdir(os.path.join(
         data_base_path, sub_policy)):
@@ -141,6 +158,7 @@ def get_training_dataset(total_data_files, batch_size, is_training,
   d = tf.data.TFRecordDataset(total_data_files)
   tf.logging.debug("{}".format(d))
   d = d.shuffle(buffer_size=shuffle_buffer_size)
+  d = d.repeat()
   d = d.map(lambda record: _decode_record(record, feature_specs))
   d = d.batch(batch_size=batch_size, drop_remainder=is_training)
   tf.logging.debug("Returning batch data {}".format(d))
@@ -157,10 +175,19 @@ def get_evaluation_dataset(total_data_files, batch_size, feature_specs):
   return d
 
 
-def evaluation_input_fn_builder(data_base_path, task, prefetch_size=1000, options=None,max_seq_len=None):
-
+def evaluation_input_fn_builder(
+    lmodel,
+    data_base_path,
+    task,
+    prefetch_size=1000,
+    options=None,
+    max_seq_len=None):
+  if lmodel == 'BERT':
+    file_string = "tf_examples.tfrecord*"
+  elif lmodel == 'XLNET':
+    file_string = "spiece.model*"
   total_data_files = tf.contrib.slim.parallel_reader.get_data_files(
-      os.path.join(data_base_path, "tf_examples.tfrecord*"))
+      os.path.join(data_base_path, file_string))
   tf.logging.info("loading eval {} data from these files: {:s}".format(
       task, " ".join(total_data_files)))
 
@@ -168,10 +195,16 @@ def evaluation_input_fn_builder(data_base_path, task, prefetch_size=1000, option
     batch_size = params["batch_size"]
 
     if task == "clas":
-      dataset = get_evaluation_dataset(
-          total_data_files,
-          batch_size,
-          get_sup_feature_specs(max_seq_len))
+      if lmodel == 'BERT':
+          dataset = get_evaluation_dataset(
+              total_data_files,
+              batch_size,
+              get_sup_feature_specs(max_seq_len))
+      elif lmodel == 'XLNET':
+          dataset = get_evaluation_dataset(
+            total_data_files,
+            batch_size,
+            get_xlnet_sup_feature_specs(max_seq_len))
     else:
       assert False
 
@@ -183,6 +216,7 @@ def evaluation_input_fn_builder(data_base_path, task, prefetch_size=1000, option
 
 
 def training_input_fn_builder(
+    lmodel,
     sup_data_base_path=None,
     unsup_data_base_path=None,
     aug_ops=None,
@@ -190,13 +224,18 @@ def training_input_fn_builder(
     unsup_ratio=None,
     num_threads=8,
     shuffle_buffer_size=100000,
-    prefetch_size=1000, 
+    prefetch_size=1000,
     max_seq_len=None):
-  
+
+  if lmodel == 'BERT':
+      file_string = "tf_examples.tfrecord*"
+  elif lmodel == 'XLNET':
+      file_string = "spiece.model*"
+
   # Generate list of input files from which to grab our records
   sup_total_data_files = tf.contrib.slim.parallel_reader.get_data_files(
-      os.path.join(sup_data_base_path, "tf_examples.tfrecord*"))
-  
+      os.path.join(sup_data_base_path, file_string))
+
   # Print the files out to the screen
   tf.logging.info("loading training data from these files: {:s}".format(
       " ".join(sup_total_data_files)))
@@ -215,7 +254,7 @@ def training_input_fn_builder(
   is_training = True
 
   def input_fn(params):
-    """The `input_fn` for our Esimator."""
+    """The `input_fn` for our Estimator."""
     sup_batch_size = params["batch_size"]
     total_batch_size = 0
     tf.logging.info("Supervised batch size: %d", (sup_batch_size))
@@ -226,14 +265,22 @@ def training_input_fn_builder(
     # For eval, we want no shuffling and parallel reading doesn't matter.
     if sup_data_base_path is not None:
       tf.logging.info("Getting training examples")
-      
+
       # Get training dataset returns a batch of decoded data
-      sup_dst = get_training_dataset(
-          sup_total_data_files,
-          sup_batch_size,
-          is_training,
-          shuffle_buffer_size,
-          get_sup_feature_specs(max_seq_len))
+      if lmodel == 'BERT':
+          sup_dst = get_training_dataset(
+              sup_total_data_files,
+              sup_batch_size,
+              is_training,
+              shuffle_buffer_size,
+              get_sup_feature_specs(max_seq_len))
+      elif lmodel == 'XLNET':
+          sup_dst = get_training_dataset(
+              sup_total_data_files,
+              sup_batch_size,
+              is_training,
+              shuffle_buffer_size,
+              get_xlnet_sup_feature_specs(max_seq_len))
       tf.logging.info("Got a batch of training data of size: {}".format(sup_batch_size))
       total_batch_size += sup_batch_size
       dataset_list.append(sup_dst)
@@ -276,5 +323,3 @@ def training_input_fn_builder(
     # It will call `make_one_shot_iterator()` and such.
     return d
   return input_fn
-
-

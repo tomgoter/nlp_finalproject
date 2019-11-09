@@ -21,6 +21,7 @@ from __future__ import print_function
 import copy
 import json
 import os
+import collections
 from absl import app
 from absl import flags
 from absl import logging
@@ -28,12 +29,19 @@ from absl import logging
 import numpy as np
 import tensorflow as tf
 
+import sentencepiece as spm
+
 # from augmentation import aug_policy
 from augmentation import sent_level_augment
 from augmentation import word_level_augment
 from utils import raw_data_utils
 from utils import tokenization
-
+from utils.classifier_utils import PaddingInputExample
+from utils.classifier_utils import convert_single_example, _truncate_seq_pair, _truncate_seq_pair_keep_right
+from utils.prepro_utils import preprocess_text, encode_ids
+from utils.data_utils import SEP_ID, VOCAB_SIZE, CLS_ID
+from utils import model_utils
+from utils import function_builder
 
 FLAGS = flags.FLAGS
 
@@ -96,6 +104,13 @@ flags.DEFINE_integer(
     "worker_id", 0,
     "An argument for parallel preprocessing. See 'replicas' for more details")
 
+# for xlnet
+flags.DEFINE_string("spiece_model_file", default="",
+      help="Sentence Piece model path.")
+flags.DEFINE_bool("xlnet", default=False,
+      help="Whether this is an xlnet model")
+flags.DEFINE_bool("overwrite_data", default=False,
+                help="Overwrite existing training data?")
 
 def get_data_for_worker(examples, replicas, worker_id):
   data_per_worker = len(examples) // replicas
@@ -145,11 +160,13 @@ def get_data_stats(data_stats_dir, sub_set, sup_size, replicas, examples):
   else:
     assert sup_size == -1, "should use the complete set to get tf_idf"
     assert replicas == 1, "should use the complete set to get tf_idf"
+    print("Calculating Data Stats")
     data_stats = word_level_augment.get_data_stats(examples)
+    logging.info("Making directory {}".format(data_stats_dir))
     tf.io.gfile.makedirs(data_stats_dir)
     for key in keys:
-      tf.io.write_file("{}/{}.json".format(data_stats_dir, key),
-        json.dumps(data_stats[key]))
+      with tf.io.gfile.GFile("{}/{}.json".format(data_stats_dir, key), "w") as ouf:
+        json.dump(data_stats[key], ouf)
     logging.info("dumped data stats to {:s}".format(data_stats_dir))
   return data_stats
 
@@ -157,14 +174,13 @@ def get_data_stats(data_stats_dir, sub_set, sup_size, replicas, examples):
 def tokenize_examples(examples, tokenizer):
   logging.info("tokenizing examples")
   for i in range(len(examples)):
-    examples[i].word_list_a = tokenizer.tokenize_to_word(examples[i].text_a
+    examples[i].word_list_a = tokenizer.tokenize_to_word(examples[i].text_a)
     if examples[i].text_b:
       examples[i].word_list_b = tokenizer.tokenize_to_word(examples[i].text_b)
     if i % 10000 == 0:
       logging.info("finished tokenizing example {:d}".format(i))
   logging.info("First five examples: {}".format(examples[:5]))
   return examples
-
 
 def convert_examples_to_features(
     examples, label_list, seq_length, tokenizer, trunc_keep_right,
@@ -285,8 +301,55 @@ def convert_examples_to_features(
   return features
 
 
+def file_based_convert_examples_to_features(
+    examples, label_list, max_seq_length, tokenize_fn, num_passes=1,
+    data_stats=None, aug_ops=None):
+  """
+  This is the function used to preprocess data for XLNet.
+  It convert a set of `InputExample`s to a TFRecord file.
+  """
+
+
+  if num_passes > 1:
+    examples *= num_passes
+
+  if FLAGS.xlnet == True and aug_ops:
+    logging.info("XLNet Model")
+    examples = tokenize_examples(
+                 examples, tokenization.FullTokenizer(do_lower_case=False))
+    logging.info("building vocab")
+    word_vocab = build_vocab(examples)
+    logging.info("augmenting data using {}".format(aug_ops))
+    examples = word_level_augment.word_level_augment(
+      examples, aug_ops, word_vocab, data_stats
+    )
+
+  features = []
+  for (ex_index, example) in enumerate(examples):
+    if ex_index % 5000 == 0:
+      tf.logging.info("Writing example {} of {}".format(ex_index,
+                                                        len(examples)))
+
+    feature = convert_single_example(ex_index, example, label_list,
+                                     max_seq_length, tokenize_fn)
+
+
+    features.append(
+       InputFeaturesXL(
+           input_ids=feature.input_ids,
+           input_mask=feature.input_mask,
+           segment_ids=feature.segment_ids,
+           label_ids=feature.label_id,
+           is_real_example=int(feature.is_real_example)))
+
+  return features
+
 def _create_int_feature(values):
   feature = tf.train.Feature(int64_list=tf.train.Int64List(value=list(values)))
+  return feature
+
+def _create_float_feature(values):
+  feature = tf.train.Feature(float_list=tf.train.FloatList(value=list(values)))
   return feature
 
 
@@ -308,6 +371,28 @@ class InputFeatures(object):
         "input_mask": _create_int_feature(self.input_mask),
         "input_type_ids": _create_int_feature(self.input_type_ids),
         "label_ids": _create_int_feature([self.label_id])
+    }
+
+class InputFeaturesXL(object):
+  """A single set of features of data."""
+
+  def __init__(self, input_ids, input_mask, segment_ids, label_ids, is_real_example):
+    self.input_ids = input_ids
+    self.input_mask = input_mask
+    self.segment_ids = segment_ids
+    self.label_ids = label_ids
+    self.is_real_example = is_real_example
+
+  def get_dict_features(self):
+    '''
+    This function provides the feature keys for the serialization
+    '''
+    return {
+        "input_ids": _create_int_feature(self.input_ids),
+        "input_mask": _create_int_feature(self.input_mask),
+        "segment_ids": _create_int_feature(self.segment_ids),
+        "label_ids": _create_int_feature([self.label_ids]),
+        "is_real_example": _create_int_feature([self.is_real_example])
     }
 
 
@@ -341,9 +426,52 @@ def obtain_tfrecord_writer(data_path, worker_id, shard_cnt):
           "tf_examples.tfrecord.{:d}.{:d}".format(worker_id, shard_cnt)))
   return tfrecord_writer
 
+class PairedUnsupInputFeaturesXL(object):
+  """Features for paired unsup data."""
+
+  def __init__(self, ori_input_ids, ori_input_mask, ori_segment_ids, ori_is_real_example,
+               aug_input_ids, aug_input_mask, aug_segment_ids, aug_is_real_example,):
+    self.ori_input_ids = ori_input_ids
+    self.ori_input_mask = ori_input_mask
+    self.ori_segment_ids = ori_segment_ids
+    self.ori_is_real_example = ori_is_real_example
+    self.aug_input_ids = aug_input_ids
+    self.aug_input_mask = aug_input_mask
+    self.aug_segment_ids = aug_segment_ids
+    self.aug_is_real_example = aug_is_real_example
+
+  def get_dict_features(self):
+    return {
+        "ori_input_ids": _create_int_feature(self.ori_input_ids),
+        "ori_input_mask": _create_int_feature(self.ori_input_mask),
+        "ori_segment_ids": _create_int_feature(self.ori_segment_ids),
+        "ori_is_real_example": _create_int_feature([self.ori_is_real_example]),
+        "aug_input_ids": _create_int_feature(self.aug_input_ids),
+        "aug_input_mask": _create_int_feature(self.aug_input_mask),
+        "aug_segment_ids": _create_int_feature(self.aug_segment_ids),
+        "aug_is_real_example": _create_int_feature([self.aug_is_real_example]),
+    }
+
+
+def obtain_tfrecord_writer(data_path, worker_id, shard_cnt):
+  tfrecord_writer = tf.io.TFRecordWriter(
+      os.path.join(
+          data_path,
+          "tf_examples.tfrecord.{:d}.{:d}".format(worker_id, shard_cnt)))
+  return tfrecord_writer
+
 
 def dump_tfrecord(features, data_path, worker_id=None, max_shard_size=4096):
   """Dump tf record."""
+
+  # do not create duplicated records
+  if tf.io.gfile.exists(data_path) and not FLAGS.overwrite_data:
+    tf.logging.info("Do not overwrite tfrecord {} exists.".format(data_path))
+    return
+
+  tf.logging.info("Create new tfrecord {}.".format(data_path))
+
+
   if not tf.io.gfile.exists(data_path):
     tf.io.gfile.makedirs(data_path)
   logging.info("dumping TFRecords")
@@ -390,40 +518,6 @@ def get_data_by_size_lim(train_examples, processor, sup_size):
   return train_examples
 
 
-def _truncate_seq_pair_keep_right(tokens_a, tokens_b, max_length):
-  """Truncates a sequence pair in place to the maximum length."""
-
-  # This is a simple heuristic which will always truncate the longer sequence
-  # one token at a time. This makes more sense than truncating an equal percent
-  # of tokens from each, since if one sequence is very short then each token
-  # that's truncated likely contains more information than a longer sequence.
-  while True:
-    total_length = len(tokens_a) + len(tokens_b)
-    if total_length <= max_length:
-      break
-    if len(tokens_a) > len(tokens_b):
-      tokens_a.pop(0)
-    else:
-      tokens_b.pop(0)
-
-
-def _truncate_seq_pair(tokens_a, tokens_b, max_length):
-  """Truncates a sequence pair in place to the maximum length."""
-
-  # This is a simple heuristic which will always truncate the longer sequence
-  # one token at a time. This makes more sense than truncating an equal percent
-  # of tokens from each, since if one sequence is very short then each token
-  # that's truncated likely contains more information than a longer sequence.
-  while True:
-    total_length = len(tokens_a) + len(tokens_b)
-    if total_length <= max_length:
-      break
-    if len(tokens_a) > len(tokens_b):
-      tokens_a.pop()
-    else:
-      tokens_b.pop()
-
-
 def proc_and_save_sup_data(
     processor, sub_set, raw_data_dir, sup_out_dir,
     tokenizer, max_seq_length, trunc_keep_right,
@@ -461,6 +555,51 @@ def proc_and_save_sup_data(
       trunc_keep_right, None, None)
   dump_tfrecord(features, sup_out_dir, worker_id)
 
+def proc_and_save_sup_data_xlnet(
+    processor, sub_set, raw_data_dir, sup_out_dir,
+    tokenize_fn, max_seq_length, trunc_keep_right,
+    worker_id, replicas, sup_size):
+
+  logging.info("getting examples")
+  if sub_set == "train":
+    examples = processor.get_train_examples(raw_data_dir)
+  elif sub_set == "dev":
+    examples = processor.get_dev_examples(raw_data_dir)
+    assert replicas == 1, "dev set can be processsed with just one worker"
+    assert sup_size == -1, "should use the full dev set"
+  elif sub_set == "test":
+    examples = processor.get_test_examples(raw_data_dir)
+    assert replicas == 1, "dev set can be processsed with just one worker"
+    assert sup_size == -1, "should use the full test set"
+
+  if FLAGS.xlnet == True:
+    spm_basename  =  os.path.basename(FLAGS.spiece_model_file)
+    train_file_base = "{}.len-{}.train.tf_record".format(
+        spm_basename, max_seq_length)
+    train_file = os.path.join(sup_out_dir, train_file_base)
+    tf.logging.info("Use tfrecord file {}".format(train_file))
+
+  if sup_size != -1:
+    logging.info("setting number of examples to {:d}".format(
+        sup_size))
+    examples = get_data_by_size_lim(
+        examples, processor, sup_size)
+  if replicas != 1:
+    if len(examples) < replicas:
+      replicas = len(examples)
+      if worker_id >= replicas:
+        return
+    examples = get_data_for_worker(
+        examples, replicas, worker_id)
+
+  logging.info("processing data")
+
+  features = file_based_convert_examples_to_features(
+      examples, processor.get_labels(), max_seq_length,
+      tokenize_fn, num_passes=1)
+
+  dump_tfrecord(features, train_file, worker_id)
+
 
 def proc_and_save_unsup_data(
     processor, sub_set,
@@ -493,7 +632,7 @@ def proc_and_save_unsup_data(
 
   logging.info("getting augmented examples")
   aug_examples = copy.deepcopy(ori_examples)
-  
+
   # Doesn't do anything for tf-idf augmentation
   aug_examples = sent_level_augment.run_augment(
       aug_examples, aug_ops, sub_set,
@@ -532,6 +671,85 @@ def proc_and_save_unsup_data(
         ))
   dump_tfrecord(unsup_features, unsup_out_dir, worker_id)
 
+def proc_and_save_unsup_data_xlnet(
+    processor, sub_set,
+    raw_data_dir, data_stats_dir, unsup_out_dir,
+    tokenize_fn,
+    max_seq_length, trunc_keep_right,
+    aug_ops, aug_copy_num,
+    worker_id, replicas):
+  # print random seed just to double check that we use different random seeds
+  # for different runs so that we generate different augmented examples for the same original example.
+  random_seed = np.random.randint(0, 100000)
+  logging.info("random seed: {:d}".format(random_seed))
+  np.random.seed(random_seed)
+  logging.info("getting examples")
+
+  if sub_set == "train":
+    ori_examples = processor.get_train_examples(raw_data_dir)
+  elif sub_set.startswith("unsup"):
+    print(sub_set)
+    ori_examples = processor.get_unsup_examples(raw_data_dir, sub_set)
+  else:
+    assert False
+  # this is the size before spliting data for each worker
+  data_total_size = len(ori_examples)
+  if replicas != -1:
+    ori_examples, start, end = get_data_for_worker(
+        ori_examples, replicas, worker_id)
+  else:
+    start = 0
+    end = len(ori_examples)
+
+  logging.info("getting augmented examples")
+  aug_examples = copy.deepcopy(ori_examples)
+
+  # Doesn't do anything for tf-idf augmentation
+  aug_examples = sent_level_augment.run_augment(
+      aug_examples, aug_ops, sub_set,
+      aug_copy_num,
+      start, end, data_total_size)
+
+  labels = processor.get_labels() + ["unsup"]
+  logging.info("processing ori examples")
+
+  ori_features = file_based_convert_examples_to_features(
+      ori_examples, processor.get_labels(), max_seq_length,
+      tokenize_fn, num_passes=1)
+
+  tokenized_ori_examples = tokenize_examples(
+               ori_examples, tokenization.FullTokenizer(do_lower_case=False))
+
+  if "idf" in aug_ops:
+    data_stats = get_data_stats(
+        data_stats_dir, sub_set,
+        -1, replicas, tokenized_ori_examples)
+  else:
+    data_stats = None
+
+  logging.info("processing aug examples using aug ops {}".format(aug_ops))
+
+  aug_features = file_based_convert_examples_to_features(
+      aug_examples, processor.get_labels(), max_seq_length,
+      tokenize_fn, num_passes=1, data_stats=data_stats, aug_ops=aug_ops)
+
+  logging.info("{} Original Features".format(len(ori_features)))
+  logging.info("{} Augmented Features".format(len(aug_features)))
+  unsup_features = []
+  for ori_feat, aug_feat in zip(ori_features, aug_features):
+    unsup_features.append(PairedUnsupInputFeaturesXL(
+        ori_feat.input_ids,
+        ori_feat.input_mask,
+        ori_feat.segment_ids,
+        ori_feat.is_real_example,
+        aug_feat.input_ids,
+        aug_feat.input_mask,
+        aug_feat.segment_ids,
+        aug_feat.is_real_example
+        ))
+  logging.info("There are {} total unsupervised records".format(len(unsup_features)))
+  dump_tfrecord(unsup_features, unsup_out_dir, worker_id)
+
 
 def main(_):
 
@@ -543,20 +761,36 @@ def main(_):
             FLAGS.max_seq_length, 512))
 
   processor = raw_data_utils.get_processor(FLAGS.task_name)
-  # Create tokenizer
-  tokenizer = tokenization.FullTokenizer(
-      vocab_file=FLAGS.vocab_file, do_lower_case=FLAGS.do_lower_case)
+
+  if FLAGS.xlnet == False:
+    # Create tokenizer
+    tokenizer = tokenization.FullTokenizer(
+        vocab_file=FLAGS.vocab_file, do_lower_case=FLAGS.do_lower_case)
+  else:
+    sp = spm.SentencePieceProcessor()
+    sp.Load(FLAGS.spiece_model_file)
+    def tokenize_fn(text):
+      text = preprocess_text(text, lower=False)
+      return encode_ids(sp, text)
 
   if FLAGS.data_type == "sup":
     sup_out_dir = FLAGS.output_base_dir
     logging.info("Create sup. data: subset {} => {}".format(
         FLAGS.sub_set, sup_out_dir))
+    if FLAGS.xlnet == True:
 
-    proc_and_save_sup_data(
-        processor, FLAGS.sub_set, FLAGS.raw_data_dir, sup_out_dir,
-        tokenizer, FLAGS.max_seq_length, FLAGS.trunc_keep_right,
-        FLAGS.worker_id, FLAGS.replicas, FLAGS.sup_size,
-    )
+      proc_and_save_sup_data_xlnet(
+          processor, FLAGS.sub_set, FLAGS.raw_data_dir, sup_out_dir,
+          tokenize_fn, FLAGS.max_seq_length, FLAGS.trunc_keep_right,
+          FLAGS.worker_id, FLAGS.replicas, FLAGS.sup_size,
+      )
+
+    else:
+      proc_and_save_sup_data(
+          processor, FLAGS.sub_set, FLAGS.raw_data_dir, sup_out_dir,
+          tokenizer, FLAGS.max_seq_length, FLAGS.trunc_keep_right,
+          FLAGS.worker_id, FLAGS.replicas, FLAGS.sup_size,
+      )
   elif FLAGS.data_type == "unsup":
     assert FLAGS.aug_ops is not None, \
         "aug_ops is required to preprocess unsupervised data."
@@ -569,12 +803,20 @@ def main(_):
 
     logging.info("Create unsup. data: subset {} => {}".format(
         FLAGS.sub_set, unsup_out_dir))
-    proc_and_save_unsup_data(
-        processor, FLAGS.sub_set,
-        FLAGS.raw_data_dir, data_stats_dir, unsup_out_dir,
-        tokenizer, FLAGS.max_seq_length, FLAGS.trunc_keep_right,
-        FLAGS.aug_ops, FLAGS.aug_copy_num,
-        FLAGS.worker_id, FLAGS.replicas)
+    if FLAGS.xlnet == True:
+      proc_and_save_unsup_data_xlnet(
+            processor, FLAGS.sub_set,
+            FLAGS.raw_data_dir, data_stats_dir, unsup_out_dir,
+            tokenize_fn, FLAGS.max_seq_length, FLAGS.trunc_keep_right,
+            FLAGS.aug_ops, FLAGS.aug_copy_num,
+            FLAGS.worker_id, FLAGS.replicas)
+    else:
+      proc_and_save_unsup_data(
+            processor, FLAGS.sub_set,
+            FLAGS.raw_data_dir, data_stats_dir, unsup_out_dir,
+            tokenizer, FLAGS.max_seq_length, FLAGS.trunc_keep_right,
+            FLAGS.aug_ops, FLAGS.aug_copy_num,
+            FLAGS.worker_id, FLAGS.replicas)
 
 
 if __name__ == "__main__":
