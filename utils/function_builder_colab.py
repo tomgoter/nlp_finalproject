@@ -193,7 +193,7 @@ def get_uda_classification_loss(
   label = tf.reshape(features["label_ids"], [bsz_per_core])
 
   num_sample = inp.shape[0].value
-  logging.info("Batch Size {}".format(num_sample))
+  tf.logging.info("Batch Size {}".format(num_sample))
   if is_training:
     assert num_sample % (1 + 2 * unsup_ratio) == 0
     sup_batch_size = num_sample // (1 + 2 * unsup_ratio)
