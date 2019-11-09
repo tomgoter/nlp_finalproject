@@ -24,7 +24,7 @@ import tensorflow as tf
 
 from bpath import modeling
 from bpath import optimization
-from upath import tpu_utils, function_builder, model_utils
+from upath import tpu_utils, function_builder_colab, model_utils
 
 from absl import app
 from absl import flags
