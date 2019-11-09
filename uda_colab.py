@@ -436,29 +436,29 @@ def model_fn_builder(
              unsup_loss_mask, correct_label_probs) = function_builder_colab.get_uda_classification_loss(
                   options, features, num_labels, is_training, global_step)
 
-           ##### Aggregate losses into total_loss
-           metric_dict = {}
+          ##### Aggregate losses into total_loss
+          metric_dict = {}
 
-           # number of correct predictions
-           predictions = tf.argmax(logits, axis=-1, output_type=label_ids.dtype)
-           is_correct = tf.cast(tf.equal(predictions, label_ids), tf.float32)
-           acc = tf.reduce_mean(is_correct)
-           # add sup. metrics to dict
-           metric_dict["sup/loss"] = sup_loss
-           metric_dict["sup/accu"] = acc
-           metric_dict["sup/correct_cat_probs"] = correct_label_probs
-           metric_dict["sup/tsa_threshold"] = tsa_threshold
+          # number of correct predictions
+          predictions = tf.argmax(logits, axis=-1, output_type=label_ids.dtype)
+          is_correct = tf.cast(tf.equal(predictions, label_ids), tf.float32)
+          acc = tf.reduce_mean(is_correct)
+          # add sup. metrics to dict
+          metric_dict["sup/loss"] = sup_loss
+          metric_dict["sup/accu"] = acc
+          metric_dict["sup/correct_cat_probs"] = correct_label_probs
+          metric_dict["sup/tsa_threshold"] = tsa_threshold
 
-           metric_dict["sup/sup_trained_ratio"] = tf.reduce_mean(loss_mask)
-           total_loss = sup_loss
+          metric_dict["sup/sup_trained_ratio"] = tf.reduce_mean(loss_mask)
+          total_loss = sup_loss
 
-           # If using UDA add the unsupervised loss to the supervised loss
-           if unsup_ratio > 0 and uda_coeff > 0 and "input_ids" in features:
-             total_loss += uda_coeff * unsup_loss
-             metric_dict["unsup/loss"] = unsup_loss
+          # If using UDA add the unsupervised loss to the supervised loss
+          if unsup_ratio > 0 and uda_coeff > 0 and "input_ids" in features:
+            total_loss += uda_coeff * unsup_loss
+            metric_dict["unsup/loss"] = unsup_loss
 
-           if unsup_loss_mask is not None:
-             metric_dict["unsup/high_prob_ratio"] = tf.reduce_mean(unsup_loss_mask)
+          if unsup_loss_mask is not None:
+            metric_dict["unsup/high_prob_ratio"] = tf.reduce_mean(unsup_loss_mask)
 
           #### Check model parameters
           num_params = sum([np.prod(v.shape) for v in tf.trainable_variables()])
