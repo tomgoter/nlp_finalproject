@@ -248,211 +248,211 @@ def model_fn_builder(
     if lmodel == 'BERT':
         def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
         """The `model_fn` for Estimator."""
-        if print_feature:
-          logging.info("*** Features ***")
-          for name in sorted(features.keys()):
-            logging.info("Name = {}, Shape = {}".format(name, features[name].shape))
+            if print_feature:
+              logging.info("*** Features ***")
+              for name in sorted(features.keys()):
+                logging.info("Name = {}, Shape = {}".format(name, features[name].shape))
 
-        is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+            is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
-        global_step = tf.train.get_or_create_global_step()
+            global_step = tf.train.get_or_create_global_step()
 
-        ##### Classification objective
-        label_ids = features["label_ids"]
-        label_ids = tf.reshape(label_ids, [-1])
+            ##### Classification objective
+            label_ids = features["label_ids"]
+            label_ids = tf.reshape(label_ids, [-1])
 
-        if unsup_ratio > 0 and "ori_input_ids" in features:
-          logging.info("Creating UDA model")
-          input_ids = tf.concat([
-              features["input_ids"],
-              features["ori_input_ids"],
-              features["aug_input_ids"]], 0)
-          input_mask = tf.concat([
-              features["input_mask"],
-              features["ori_input_mask"],
-              features["aug_input_mask"]], 0)
-          input_type_ids = tf.concat([
-              features["input_type_ids"],
-              features["ori_input_type_ids"],
-              features["aug_input_type_ids"]], 0)
-        else:
-          logging.info("Creating supervised model")
-          input_ids = features["input_ids"]
-          input_mask = features["input_mask"]
-          input_type_ids = features["input_type_ids"]
+            if unsup_ratio > 0 and "ori_input_ids" in features:
+              logging.info("Creating UDA model")
+              input_ids = tf.concat([
+                  features["input_ids"],
+                  features["ori_input_ids"],
+                  features["aug_input_ids"]], 0)
+              input_mask = tf.concat([
+                  features["input_mask"],
+                  features["ori_input_mask"],
+                  features["aug_input_mask"]], 0)
+              input_type_ids = tf.concat([
+                  features["input_type_ids"],
+                  features["ori_input_type_ids"],
+                  features["aug_input_type_ids"]], 0)
+            else:
+              logging.info("Creating supervised model")
+              input_ids = features["input_ids"]
+              input_mask = features["input_mask"]
+              input_type_ids = features["input_type_ids"]
 
-        (sup_loss, unsup_loss, logits,
-         per_example_loss, loss_mask,
-         tsa_threshold,
-         unsup_loss_mask, correct_label_probs) = create_model(
-             bert_config=bert_config,
-             is_training=is_training,
-             input_ids=input_ids,
-             input_mask=input_mask,
-             input_type_ids=input_type_ids,
-             labels=label_ids,
-             num_labels=num_labels,
-             use_one_hot_embeddings=use_one_hot_embeddings,
-             tsa=tsa,
-             unsup_ratio=unsup_ratio,
-             global_step=global_step,
-             num_train_steps=num_train_steps,
-             uda_softmax_temp=uda_softmax_temp,
-             uda_confidence_thresh=uda_confidence_thresh
-             )
+            (sup_loss, unsup_loss, logits,
+             per_example_loss, loss_mask,
+             tsa_threshold,
+             unsup_loss_mask, correct_label_probs) = create_model(
+                 bert_config=bert_config,
+                 is_training=is_training,
+                 input_ids=input_ids,
+                 input_mask=input_mask,
+                 input_type_ids=input_type_ids,
+                 labels=label_ids,
+                 num_labels=num_labels,
+                 use_one_hot_embeddings=use_one_hot_embeddings,
+                 tsa=tsa,
+                 unsup_ratio=unsup_ratio,
+                 global_step=global_step,
+                 num_train_steps=num_train_steps,
+                 uda_softmax_temp=uda_softmax_temp,
+                 uda_confidence_thresh=uda_confidence_thresh
+                 )
 
-        ##### Aggregate losses into total_loss
-        metric_dict = {}
+            ##### Aggregate losses into total_loss
+            metric_dict = {}
 
-        # number of correct predictions
-        predictions = tf.argmax(logits, axis=-1, output_type=label_ids.dtype)
-        is_correct = tf.cast(tf.equal(predictions, label_ids), tf.float32)
-        acc = tf.reduce_mean(is_correct)
-        # add sup. metrics to dict
-        metric_dict["sup/loss"] = sup_loss
-        metric_dict["sup/accu"] = acc
-        metric_dict["sup/correct_cat_probs"] = correct_label_probs
-        metric_dict["sup/tsa_threshold"] = tsa_threshold
+            # number of correct predictions
+            predictions = tf.argmax(logits, axis=-1, output_type=label_ids.dtype)
+            is_correct = tf.cast(tf.equal(predictions, label_ids), tf.float32)
+            acc = tf.reduce_mean(is_correct)
+            # add sup. metrics to dict
+            metric_dict["sup/loss"] = sup_loss
+            metric_dict["sup/accu"] = acc
+            metric_dict["sup/correct_cat_probs"] = correct_label_probs
+            metric_dict["sup/tsa_threshold"] = tsa_threshold
 
-        metric_dict["sup/sup_trained_ratio"] = tf.reduce_mean(loss_mask)
-        total_loss = sup_loss
+            metric_dict["sup/sup_trained_ratio"] = tf.reduce_mean(loss_mask)
+            total_loss = sup_loss
 
-        # If using UDA add the unsupervised loss to the supervised loss
-        if unsup_ratio > 0 and uda_coeff > 0 and "input_ids" in features:
-          total_loss += uda_coeff * unsup_loss
-          metric_dict["unsup/loss"] = unsup_loss
+            # If using UDA add the unsupervised loss to the supervised loss
+            if unsup_ratio > 0 and uda_coeff > 0 and "input_ids" in features:
+              total_loss += uda_coeff * unsup_loss
+              metric_dict["unsup/loss"] = unsup_loss
 
-        if unsup_loss_mask is not None:
-          metric_dict["unsup/high_prob_ratio"] = tf.reduce_mean(unsup_loss_mask)
+            if unsup_loss_mask is not None:
+              metric_dict["unsup/high_prob_ratio"] = tf.reduce_mean(unsup_loss_mask)
 
-        ##### Initialize variables with pre-trained models
-        tvars = tf.compat.v1.trainable_variables()
+            ##### Initialize variables with pre-trained models
+            tvars = tf.compat.v1.trainable_variables()
 
-        # Freeze all the layers but the output
-        if freeze_layers[0]:
-          layers = [tvar for tvar in tvars if tvar.name.startswith('bert')]
-          # Train pooler
-          frozen_layers = layers[:-2]
-          # Train embedding layer
-          frozen_layers = [fl for fl in frozen_layers if fl.name.find('embedding') < 0]
-          # Train last attention layer
-          for layer_c in range(freeze_layers[1], 12):
-              frozen_layers = [fl for fl in frozen_layers if fl.name.find('layer_{}'.format(layer_c)) < 0]
-          tf.logging.debug("Freezing {}".format(frozen_layers))
-          tvars = [tvar for tvar in tvars if tvar not in frozen_layers]
+            # Freeze all the layers but the output
+            if freeze_layers[0]:
+              layers = [tvar for tvar in tvars if tvar.name.startswith('bert')]
+              # Train pooler
+              frozen_layers = layers[:-2]
+              # Train embedding layer
+              frozen_layers = [fl for fl in frozen_layers if fl.name.find('embedding') < 0]
+              # Train last attention layer
+              for layer_c in range(freeze_layers[1], 12):
+                  frozen_layers = [fl for fl in frozen_layers if fl.name.find('layer_{}'.format(layer_c)) < 0]
+              tf.logging.debug("Freezing {}".format(frozen_layers))
+              tvars = [tvar for tvar in tvars if tvar not in frozen_layers]
 
-        scaffold_fn = None
-        if init_checkpoint:
-          (assignment_map,
-           initialized_variable_names) = get_assignment_map_from_checkpoint(
-               tvars, init_checkpoint)
+            scaffold_fn = None
+            if init_checkpoint:
+              (assignment_map,
+               initialized_variable_names) = get_assignment_map_from_checkpoint(
+                   tvars, init_checkpoint)
 
-          if use_tpu:
-            def tpu_scaffold():
-              tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
-              return tf.train.Scaffold()
+              if use_tpu:
+                def tpu_scaffold():
+                  tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
+                  return tf.train.Scaffold()
 
-            scaffold_fn = tpu_scaffold
-          else:
-            tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
+                scaffold_fn = tpu_scaffold
+              else:
+                tf.compat.v1.train.init_from_checkpoint(init_checkpoint, assignment_map)
 
-        else:
-          initialized_variable_names = {}
+            else:
+              initialized_variable_names = {}
 
-        if print_structure:
-          logging.info("**** Trainable Variables ****")
-          for var in tvars:
-            init_string = ""
-            if var.name in initialized_variable_names:
-              init_string = ", *INIT_FROM_CKPT*"
-            logging.info("  name = %s, shape = %s%s", var.name, var.shape,
-                            init_string)
+            if print_structure:
+              logging.info("**** Trainable Variables ****")
+              for var in tvars:
+                init_string = ""
+                if var.name in initialized_variable_names:
+                  init_string = ", *INIT_FROM_CKPT*"
+                logging.info("  name = %s, shape = %s%s", var.name, var.shape,
+                                init_string)
 
-        ##### Construct Estimator Spec based on the specific mode
-        output_spec = None
-        if mode == tf.estimator.ModeKeys.TRAIN:
-          ## Create optimizer for training
-          train_op, curr_lr = optimization.create_optimizer(
-              total_loss, learning_rate, num_train_steps, num_warmup_steps,
-              clip_norm, global_step, freeze_layers, num_labels, use_tpu)
+            ##### Construct Estimator Spec based on the specific mode
+            output_spec = None
+            if mode == tf.estimator.ModeKeys.TRAIN:
+              ## Create optimizer for training
+              train_op, curr_lr = optimization.create_optimizer(
+                  total_loss, learning_rate, num_train_steps, num_warmup_steps,
+                  clip_norm, global_step, freeze_layers, num_labels, use_tpu)
 
 
-          # Needed to cast the learning rate from the dictionary from a string to a float
-          metric_dict["learning_rate"] = tf.cast(curr_lr, tf.float32)
+              # Needed to cast the learning rate from the dictionary from a string to a float
+              metric_dict["learning_rate"] = tf.cast(curr_lr, tf.float32)
 
-        #       # Specify the output from the estimator. train_op applies the gradients and advances the step
-        #       output_spec = tf.estimator.EstimatorSpec(
-        #           mode=mode,
-        #           loss=total_loss,
-        #           train_op=train_op)
+            #       # Specify the output from the estimator. train_op applies the gradients and advances the step
+            #       output_spec = tf.estimator.EstimatorSpec(
+            #           mode=mode,
+            #           loss=total_loss,
+            #           train_op=train_op)
 
-          ## Create host_call for training
-          host_call = tpu_utils.construct_scalar_host_call(
-              metric_dict=metric_dict,
-              model_dir=params["model_dir"],
-              prefix="training/",
-              reduce_fn=tf.reduce_mean)
+              ## Create host_call for training
+              host_call = tpu_utils.construct_scalar_host_call(
+                  metric_dict=metric_dict,
+                  model_dir=params["model_dir"],
+                  prefix="training/",
+                  reduce_fn=tf.reduce_mean)
 
-          output_spec = tf.contrib.tpu.TPUEstimatorSpec(
-              mode=mode,
-              loss=total_loss,
-              train_op=train_op,
-              host_call=host_call,
-              scaffold_fn=scaffold_fn)
+              output_spec = tf.contrib.tpu.TPUEstimatorSpec(
+                  mode=mode,
+                  loss=total_loss,
+                  train_op=train_op,
+                  host_call=host_call,
+                  scaffold_fn=scaffold_fn)
 
-        elif mode == tf.estimator.ModeKeys.EVAL:
+            elif mode == tf.estimator.ModeKeys.EVAL:
 
-          def clas_metric_fn(per_example_loss, label_ids, logits):
-            ## classification loss & accuracy
-            loss = tf.compat.v1.metrics.mean(per_example_loss)
+              def clas_metric_fn(per_example_loss, label_ids, logits):
+                ## classification loss & accuracy
+                loss = tf.compat.v1.metrics.mean(per_example_loss)
 
-            predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-            logging.debug("Predictions: {}".format(predictions))
-            logging.debug("Labels: {}".format(label_ids))
-            accuracy = tf.compat.v1.metrics.accuracy(label_ids, predictions)
-            per_class_accuracy = tf.compat.v1.metrics.mean_per_class_accuracy(
-              label_ids, predictions, num_labels)
-            precision = tf.compat.v1.metrics.precision(label_ids, predictions)
-            recall = tf.compat.v1.metrics.recall(label_ids, predictions)
+                predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+                logging.debug("Predictions: {}".format(predictions))
+                logging.debug("Labels: {}".format(label_ids))
+                accuracy = tf.compat.v1.metrics.accuracy(label_ids, predictions)
+                per_class_accuracy = tf.compat.v1.metrics.mean_per_class_accuracy(
+                  label_ids, predictions, num_labels)
+                precision = tf.compat.v1.metrics.precision(label_ids, predictions)
+                recall = tf.compat.v1.metrics.recall(label_ids, predictions)
 
-            ret_dict = {
-                "eval_classify_loss": loss,
-                "eval_classify_accuracy": accuracy,
-                "eval_precision": precision,
-                "eval_recall": recall,
-                "eval_mpca":per_class_accuracy
-            }
+                ret_dict = {
+                    "eval_classify_loss": loss,
+                    "eval_classify_accuracy": accuracy,
+                    "eval_precision": precision,
+                    "eval_recall": recall,
+                    "eval_mpca":per_class_accuracy
+                }
 
-            return ret_dict
+                return ret_dict
 
-          eval_metrics = (clas_metric_fn, [per_example_loss, label_ids, logits])
+              eval_metrics = (clas_metric_fn, [per_example_loss, label_ids, logits])
 
-        #       output_spec = tf.estimator.EstimatorSpec(
-        #           mode=mode,
-        #           loss=total_loss,
-        #           eval_metric_ops=eval_metrics)
+            #       output_spec = tf.estimator.EstimatorSpec(
+            #           mode=mode,
+            #           loss=total_loss,
+            #           eval_metric_ops=eval_metrics)
 
-          output_spec = tf.contrib.tpu.TPUEstimatorSpec(
-              mode=mode,
-              loss=total_loss,
-              eval_metrics=eval_metrics,
-              scaffold_fn=scaffold_fn)
+              output_spec = tf.contrib.tpu.TPUEstimatorSpec(
+                  mode=mode,
+                  loss=total_loss,
+                  eval_metrics=eval_metrics,
+                  scaffold_fn=scaffold_fn)
 
-        elif mode == tf.estimator.ModeKeys.PREDICT:
+            elif mode == tf.estimator.ModeKeys.PREDICT:
 
-        #       output_spec = tf.estimator.EstimatorSpec(
-        #           mode=mode,
-        #           loss=None,
-        #           predictions=predictions)
+            #       output_spec = tf.estimator.EstimatorSpec(
+            #           mode=mode,
+            #           loss=None,
+            #           predictions=predictions)
 
-          output_spec = tf.contrib.tpu.TPUEstimatorSpec(
-              mode=mode,
-              loss=None,
-              predictions=predictions,
-              scaffold_fn=scaffold_fn)
+              output_spec = tf.contrib.tpu.TPUEstimatorSpec(
+                  mode=mode,
+                  loss=None,
+                  predictions=predictions,
+                  scaffold_fn=scaffold_fn)
 
-        else:
-          raise ValueError("Only TRAIN, PREDICT and  EVAL modes are supported: %s" % (mode))
+            else:
+              raise ValueError("Only TRAIN, PREDICT and  EVAL modes are supported: %s" % (mode))
 
         return output_spec
     elif lmodel == 'XLNET':

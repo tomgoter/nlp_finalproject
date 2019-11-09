@@ -1,6 +1,6 @@
 # YAML Config File for BERT Finetuned Models
 
-bert_config_file: "./bert_pretrained/bert_base/bert_config.json"
+model_config_file: "./bert_pretrained/bert_base/bert_config.json"
 vocab_file: "./bert_pretrained/bert_base/vocab.txt"
 init_checkpoint: "./bert_pretrained/bert_base/bert_model.ckpt"
 task_name: "GoT"
