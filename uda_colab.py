@@ -21,6 +21,7 @@ from __future__ import print_function
 import collections
 import re
 import tensorflow as tf
+import numpy as np
 
 from bpath import modeling
 from bpath import optimization
