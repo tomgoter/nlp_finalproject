@@ -570,7 +570,7 @@ def model_fn_builder(
           #         mode=mode, loss=total_loss, train_op=train_op)
 
           return train_spec
-      else:
+    else:
         raise ValueError("Language model must be BERT or XLNET")
 
   return model_fn
