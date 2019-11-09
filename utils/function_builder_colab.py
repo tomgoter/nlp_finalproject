@@ -193,7 +193,7 @@ def get_uda_classification_loss(
   labels = tf.reshape(features["label_ids"], [bsz_per_core])
 
   num_sample = features["input_ids"].shape[0].value
-  tf.logging.info("Batch Size {}".format(num_sample))
+
   if is_training:
     assert num_sample % (1 + 2 * unsup_ratio) == 0
     sup_batch_size = num_sample // (1 + 2 * unsup_ratio)
@@ -228,12 +228,12 @@ def get_uda_classification_loss(
       scope=cls_scope)
 
   log_probs = tf.nn.log_softmax(clas_logits, axis=-1)
-  tf.logging.info(log_probs)
+
   correct_label_probs = None
 
   with tf.variable_scope("sup_loss"):
     sup_log_probs = log_probs[:sup_batch_size]
-    one_hot_labels = tf.one_hot(labels, depth=n_class, dtype=tf.float32)
+    one_hot_labels = tf.one_hot(features["label_ids"], depth=n_class, dtype=tf.float32)
     tgt_label_prob = one_hot_labels
 
     per_example_loss = -tf.reduce_sum(tgt_label_prob * sup_log_probs, axis=-1)
