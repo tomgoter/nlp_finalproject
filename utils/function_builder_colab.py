@@ -7,6 +7,7 @@ import functools
 import os
 import tensorflow as tf
 from xpath import modeling, xlnet_colab
+from upath import model_utils
 
 
 
@@ -141,7 +142,7 @@ def get_classification_loss(
   inp_mask = tf.transpose(features["input_mask"], [1, 0])
   label = tf.reshape(features["label_ids"], [bsz_per_core])
 
-  xlnet_config = xlnet.XLNetConfig(json_path=options['model_config_path'])
+  xlnet_config = xlnet.XLNetConfig(json_path=options['model_config_file'])
   run_config = xlnet.create_run_config(is_training, True, options)
 
   xlnet_model = xlnet.XLNetModel(
@@ -172,3 +173,113 @@ def get_classification_loss(
     total_loss = tf.reduce_mean(per_example_loss)
 
     return total_loss, per_example_loss, logits
+
+def get_uda_classification_loss(
+    options, features, n_class, is_training, global_step):
+  """Loss for downstream classification tasks."""
+
+  tsa = options['tsa']
+  unsup_ratio = options['unsup_ratio']
+  num_train_steps = options['num_train_steps']
+  uda_softmax_temp = options['uda_softmax_temp']
+  uda_confidence_thresh = options['uda_confidence_thresh']
+
+  bsz_per_core = tf.shape(features["input_ids"])[0]
+
+  inp = tf.transpose(features["input_ids"], [1, 0])
+  seg_id = tf.transpose(features["segment_ids"], [1, 0])
+  inp_mask = tf.transpose(features["input_mask"], [1, 0])
+  label = tf.reshape(features["label_ids"], [bsz_per_core])
+
+  xlnet_config = xlnet.XLNetConfig(json_path=options['model_config_file'])
+  run_config = xlnet.create_run_config(is_training, True, options)
+
+  xlnet_model = xlnet.XLNetModel(
+      xlnet_config=xlnet_config,
+      run_config=run_config,
+      input_ids=inp,
+      seg_ids=seg_id,
+      input_mask=inp_mask)
+
+  summary = xlnet_model.get_pooled_out(options['summary_type'],
+                                       options['use_summ_proj'])
+
+  if options['cls_scope'] is not None and options['cls_scope']:
+    cls_scope = "classification_{}".format(options['cls_scope'])
+  else:
+    cls_scope = "classification_{}".format(options['task_name'].lower())
+
+  logits = modeling.uda_logits(
+      hidden=summary,
+      labels=label,
+      n_class=n_class,
+      initializer=xlnet_model.get_initializer(),
+      scope=cls_scope)
+
+  log_probs = tf.nn.log_softmax(logits, axis=-1)
+  correct_label_probs = None
+
+  with tf.variable_scope("sup_loss"):
+    sup_log_probs = log_probs[:sup_batch_size]
+    one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
+    tgt_label_prob = one_hot_labels
+
+    per_example_loss = -tf.reduce_sum(tgt_label_prob * sup_log_probs, axis=-1)
+    loss_mask = tf.ones_like(per_example_loss, dtype=per_example_loss.dtype)
+    correct_label_probs = tf.reduce_sum(
+        one_hot_labels * tf.exp(sup_log_probs), axis=-1)
+
+    if tsa:
+      logging.info("Applying TSA")
+      # Starting threshold is just the inverse number of labels.
+      tsa_start = 1. / num_labels
+      tsa_threshold = model_utils.get_tsa_threshold(
+          tsa, global_step, num_train_steps,
+          tsa_start, end=1)
+
+      larger_than_threshold = tf.greater(
+          correct_label_probs, tsa_threshold)
+      loss_mask = loss_mask * (1 - tf.cast(larger_than_threshold, tf.float32))
+    else:
+      tsa_threshold = 1
+
+    loss_mask = tf.stop_gradient(loss_mask)
+    per_example_loss = per_example_loss * loss_mask
+    sup_loss = (tf.reduce_sum(per_example_loss) /
+                tf.maximum(tf.reduce_sum(loss_mask), 1))
+
+  unsup_loss_mask = None
+  if is_training and unsup_ratio > 0:
+    with tf.variable_scope("unsup_loss"):
+      ori_start = sup_batch_size
+      ori_end = ori_start + unsup_batch_size
+      aug_start = sup_batch_size + unsup_batch_size
+      aug_end = aug_start + unsup_batch_size
+
+      ori_log_probs = log_probs[ori_start : ori_end]
+      aug_log_probs = log_probs[aug_start : aug_end]
+      unsup_loss_mask = 1
+      if options['uda_softmax_temp'] != -1:
+        tgt_ori_log_probs = tf.nn.log_softmax(
+            clas_logits[ori_start : ori_end] / options['uda_softmax_temp'],
+            axis=-1)
+        tgt_ori_log_probs = tf.stop_gradient(tgt_ori_log_probs)
+      else:
+        tgt_ori_log_probs = tf.stop_gradient(ori_log_probs)
+
+      if options['uda_confidence_thresh'] != -1:
+        largest_prob = tf.reduce_max(tf.exp(ori_log_probs), axis=-1)
+        unsup_loss_mask = tf.cast(tf.greater(
+            largest_prob, options['uda_confidence_thresh']), tf.float32)
+        unsup_loss_mask = tf.stop_gradient(unsup_loss_mask)
+
+      per_example_kl_loss = model_utils.kl_for_log_probs(
+          tgt_ori_log_probs, aug_log_probs) * unsup_loss_mask
+      unsup_loss = tf.reduce_mean(per_example_kl_loss)
+
+  else:
+    unsup_loss = 0.
+
+  return (sup_loss, unsup_loss, clas_logits[:sup_batch_size],
+          per_example_loss, loss_mask,
+          tsa_threshold, unsup_loss_mask, correct_label_probs)

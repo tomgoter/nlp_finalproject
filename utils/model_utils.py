@@ -14,6 +14,57 @@ from absl import flags
 
 import tensorflow as tf
 
+def kl_for_log_probs(log_p, log_q):
+  logging.info("Calculating KL divergence")
+  p = tf.exp(log_p)
+  neg_ent = tf.reduce_sum(p * log_p, axis=-1)
+  neg_cross_ent = tf.reduce_sum(p * log_q, axis=-1)
+  kl = neg_ent - neg_cross_ent
+  return kl
+
+
+def hidden_to_logits(hidden, is_training, num_classes, scope):
+  hidden_size = hidden.shape[-1].value
+
+  with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
+    output_weights = tf.get_variable(
+        "output_weights", [num_classes, hidden_size],
+        initializer=tf.truncated_normal_initializer(stddev=0.02))
+
+    output_bias = tf.get_variable(
+        "output_bias", [num_classes], initializer=tf.zeros_initializer())
+
+    if is_training:
+      # Converted to use rate
+      hidden = tf.nn.dropout(hidden, rate=0.1)
+
+    if hidden.shape.ndims == 3:
+      logits = tf.einsum("bid,nd->bin", hidden, output_weights)
+    else:
+      logits = tf.einsum("bd,nd->bn", hidden, output_weights)
+    logits = tf.nn.bias_add(logits, output_bias)
+
+  return logits
+
+
+def get_tsa_threshold(schedule, global_step, num_train_steps, start, end):
+
+  # Fraction of the way through the training
+  training_progress = tf.cast(global_step, tf.float32) / tf.cast(num_train_steps, tf.float32)
+
+  # Calculate threshold based on the annealing schedule
+  if schedule == "linear_schedule":
+    threshold = training_progress
+    # Assumes constant scaling factor - could turn this into an input variable
+  elif schedule == "exp_schedule":
+    scale = 5
+    threshold = tf.exp((training_progress - 1) * scale)
+    # [exp(-5), exp(0)] = [1e-2, 1]
+  elif schedule == "log_schedule":
+    scale = 5
+    # [1 - exp(0), 1 - exp(-5)] = [0, 0.99]
+    threshold = 1 - tf.exp((-training_progress) * scale)
+  return threshold * (end - start) + start
 
 def configure_tpu(options):
   if options['use_tpu']:

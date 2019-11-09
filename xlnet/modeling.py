@@ -763,6 +763,24 @@ def classification_loss(hidden, labels, n_class, initializer, scope, reuse=None,
 
     return loss
 
+def uda_logits(hidden, labels, n_class, initializer, scope, reuse=None):
+  """
+      Different classification tasks should use different scope names to ensure
+      different dense layers (parameters) are used to produce the logits.
+
+      An exception will be in transfer learning, where one hopes to transfer
+      the classification weights.
+  """
+
+  with tf.variable_scope(scope, reuse=reuse):
+    logits = tf.layers.dense(
+        hidden,
+        n_class,
+        kernel_initializer=initializer,
+        name='logit')
+
+    return logits
+
 
 def regression_loss(hidden, labels, initializer, scope, reuse=None,
                     return_logits=False):
@@ -780,4 +798,3 @@ def regression_loss(hidden, labels, initializer, scope, reuse=None,
       return loss, logits
 
     return loss
-

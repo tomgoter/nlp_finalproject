@@ -31,61 +31,6 @@ from absl import flags
 from absl import logging
 
 
-def kl_for_log_probs(log_p, log_q):
-  logging.info("Calculating KL divergence")
-  p = tf.exp(log_p)
-  neg_ent = tf.reduce_sum(p * log_p, axis=-1)
-  neg_cross_ent = tf.reduce_sum(p * log_q, axis=-1)
-  kl = neg_ent - neg_cross_ent
-  return kl
-
-
-def hidden_to_logits(hidden, is_training, num_classes, scope):
-  hidden_size = hidden.shape[-1].value
-
-  with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-    output_weights = tf.get_variable(
-        "output_weights", [num_classes, hidden_size],
-        initializer=tf.truncated_normal_initializer(stddev=0.02))
-
-    output_bias = tf.get_variable(
-        "output_bias", [num_classes], initializer=tf.zeros_initializer())
-
-    if is_training:
-      # Converted to use rate
-      hidden = tf.nn.dropout(hidden, rate=0.1)
-
-    if hidden.shape.ndims == 3:
-      logits = tf.einsum("bid,nd->bin", hidden, output_weights)
-    else:
-      logits = tf.einsum("bd,nd->bn", hidden, output_weights)
-    logits = tf.nn.bias_add(logits, output_bias)
-
-  return logits
-
-
-def get_tsa_threshold(schedule, global_step, num_train_steps, start, end):
-
-  # Fraction of the way through the training
-  training_progress = tf.cast(global_step, tf.float32) / tf.cast(num_train_steps, tf.float32)
-
-  # Calculate threshold based on the annealing schedule
-  if schedule == "linear_schedule":
-    threshold = training_progress
-    # Assumes constant scaling factor - could turn this into an input variable
-  elif schedule == "exp_schedule":
-    scale = 5
-    threshold = tf.exp((training_progress - 1) * scale)
-    # [exp(-5), exp(0)] = [1e-2, 1]
-  elif schedule == "log_schedule":
-    scale = 5
-    # [1 - exp(0), 1 - exp(-5)] = [0, 0.99]
-    threshold = 1 - tf.exp((-training_progress) * scale)
-  else:
-    print("Check schedule - must be linear_schedule, exp_schedule or log_schedule")
-  return threshold * (end - start) + start
-
-
 def create_model(
     config,
     is_training,
@@ -120,7 +65,7 @@ def create_model(
       token_type_ids=input_type_ids,
       use_one_hot_embeddings=use_one_hot_embeddings)
 
-  clas_logits = hidden_to_logits(
+  clas_logits = model_utils.hidden_to_logits(
       hidden=pooled,
       is_training=is_training,
       num_classes=num_labels,
@@ -143,7 +88,7 @@ def create_model(
       logging.info("Applying TSA")
       # Starting threshold is just the inverse number of labels.
       tsa_start = 1. / num_labels
-      tsa_threshold = get_tsa_threshold(
+      tsa_threshold = model_utils.get_tsa_threshold(
           tsa, global_step, num_train_steps,
           tsa_start, end=1)
 
@@ -183,7 +128,7 @@ def create_model(
             largest_prob, uda_confidence_thresh), tf.float32)
         unsup_loss_mask = tf.stop_gradient(unsup_loss_mask)
 
-      per_example_kl_loss = kl_for_log_probs(
+      per_example_kl_loss = model_utils.kl_for_log_probs(
           tgt_ori_log_probs, aug_log_probs) * unsup_loss_mask
       unsup_loss = tf.reduce_mean(per_example_kl_loss)
 
@@ -459,9 +404,61 @@ def model_fn_builder(
           #### Training or Evaluation
           is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
-          #### Get loss from inputs
-          (total_loss, per_example_loss, logits) = function_builder.get_classification_loss(
-                  options, features, num_labels, is_training)
+          global_step = tf.train.get_or_create_global_step()
+
+          ##### Classification objective
+          label_ids = features["label_ids"]
+          label_ids = tf.reshape(label_ids, [-1])
+
+          if unsup_ratio > 0 and "ori_input_ids" in features:
+            logging.info("Creating UDA model")
+            input_ids = tf.concat([
+                features["input_ids"],
+                features["ori_input_ids"],
+                features["aug_input_ids"]], 0)
+            input_mask = tf.concat([
+                features["input_mask"],
+                features["ori_input_mask"],
+                features["aug_input_mask"]], 0)
+            input_type_ids = tf.concat([
+                features["input_type_ids"],
+                features["ori_input_type_ids"],
+                features["aug_input_type_ids"]], 0)
+          else:
+            logging.info("Creating supervised model")
+            input_ids = features["input_ids"]
+            input_mask = features["input_mask"]
+            input_type_ids = features["input_type_ids"]
+
+          (sup_loss, unsup_loss, logits,
+             per_example_loss, loss_mask,
+             tsa_threshold,
+             unsup_loss_mask, correct_label_probs) = function_builder_colab.get_uda_classification_loss(
+                  options, features, num_labels, is_training, global_step)
+
+           ##### Aggregate losses into total_loss
+           metric_dict = {}
+
+           # number of correct predictions
+           predictions = tf.argmax(logits, axis=-1, output_type=label_ids.dtype)
+           is_correct = tf.cast(tf.equal(predictions, label_ids), tf.float32)
+           acc = tf.reduce_mean(is_correct)
+           # add sup. metrics to dict
+           metric_dict["sup/loss"] = sup_loss
+           metric_dict["sup/accu"] = acc
+           metric_dict["sup/correct_cat_probs"] = correct_label_probs
+           metric_dict["sup/tsa_threshold"] = tsa_threshold
+
+           metric_dict["sup/sup_trained_ratio"] = tf.reduce_mean(loss_mask)
+           total_loss = sup_loss
+
+           # If using UDA add the unsupervised loss to the supervised loss
+           if unsup_ratio > 0 and uda_coeff > 0 and "input_ids" in features:
+             total_loss += uda_coeff * unsup_loss
+             metric_dict["unsup/loss"] = unsup_loss
+
+           if unsup_loss_mask is not None:
+             metric_dict["unsup/high_prob_ratio"] = tf.reduce_mean(unsup_loss_mask)
 
           #### Check model parameters
           num_params = sum([np.prod(v.shape) for v in tf.trainable_variables()])
@@ -539,8 +536,7 @@ def model_fn_builder(
           #### Configuring the optimizer
           train_op, learning_rate, _ = model_utils.get_train_op(options, total_loss)
 
-          monitor_dict = {}
-          monitor_dict["lr"] = learning_rate
+          metric_dict["lr"] = learning_rate
 
           #### Constucting training TPUEstimatorSpec with new cache.
           # if use_tpu:
@@ -550,10 +546,10 @@ def model_fn_builder(
           is_correct = tf.equal(predictions, label_ids)
           accuracy = tf.reduce_mean(tf.cast(is_correct, tf.float32))
 
-          monitor_dict["accuracy"] = accuracy
+          metric_dict["accuracy"] = accuracy
 
-          host_call = function_builder.construct_scalar_host_call(
-                    monitor_dict=monitor_dict,
+          host_call = function_builder_colab.construct_scalar_host_call(
+                    monitor_dict=metric_dict,
                     model_dir=options['model_dir'],
                     prefix="train/",
                     reduce_fn=tf.reduce_mean)

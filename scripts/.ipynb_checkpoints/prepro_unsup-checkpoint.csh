@@ -15,25 +15,21 @@
 #!/bin/csh
 
 # Set up cases to process data for
-
+set bert_vocab_file = ./bert_pretrained/bert_base/vocab.txt
 set sub_set =  ( 'unsup' 'unsup' 'unsup' 'unsup' 'unsup' 'unsup' 'unsup' 'unsup' 'unsup' )
 set probs =    (    0.1     0.2     0.3     0.4     0.5     0.6     0.7     0.8     0.9  )
-foreach  i      (      2 3 4 5 9 7 8 )
-#foreach i      (      1       2       3       4       5       6       7       8       9  )
+foreach i      (      1       2       3       4       5       6       7       8       9  )
 
   # Run the cases
   echo Running on ${sub_set[${i}]} set
-
+  
   # Preprocess unlabeled set
 python preprocess.py \
   --raw_data_dir=./Data \
-  --output_base_dir=./Data/proc_data/GoT_xlnet/${sub_set[${i}]} \
+  --output_base_dir=./Data/proc_data/GoT/${sub_set[${i}]} \
   --data_type=${sub_set[${i}]} \
-  --sub_set=unsup_xl \
+  --sub_set=unsup_in \
   --aug_ops=tf_idf-${probs[${i}]} \
   --aug_copy_num=0 \
-  --xlnet=True \
-  --spiece_model_file=./xlnet_pretrained/xlnet_base/spiece.model \
-  --overwrite_data=True \
-  \$@
+  --vocab_file=$bert_vocab_file
 end

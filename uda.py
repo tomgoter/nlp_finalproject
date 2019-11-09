@@ -34,59 +34,6 @@ from absl import logging
 from utils import function_builder, model_utils
 
 
-def kl_for_log_probs(log_p, log_q):
-  logging.info("Calculating KL divergence")
-  p = tf.exp(log_p)
-  neg_ent = tf.reduce_sum(p * log_p, axis=-1)
-  neg_cross_ent = tf.reduce_sum(p * log_q, axis=-1)
-  kl = neg_ent - neg_cross_ent
-  return kl
-
-
-def hidden_to_logits(hidden, is_training, num_classes, scope):
-  hidden_size = hidden.shape[-1].value
-
-  with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-    output_weights = tf.get_variable(
-        "output_weights", [num_classes, hidden_size],
-        initializer=tf.truncated_normal_initializer(stddev=0.02))
-
-    output_bias = tf.get_variable(
-        "output_bias", [num_classes], initializer=tf.zeros_initializer())
-
-    if is_training:
-      # Converted to use rate
-      hidden = tf.nn.dropout(hidden, rate=0.1)
-
-    if hidden.shape.ndims == 3:
-      logits = tf.einsum("bid,nd->bin", hidden, output_weights)
-    else:
-      logits = tf.einsum("bd,nd->bn", hidden, output_weights)
-    logits = tf.nn.bias_add(logits, output_bias)
-
-  return logits
-
-
-def get_tsa_threshold(schedule, global_step, num_train_steps, start, end):
-
-  # Fraction of the way through the training
-  training_progress = tf.cast(global_step, tf.float32) / tf.cast(num_train_steps, tf.float32)
-
-  # Calculate threshold based on the annealing schedule
-  if schedule == "linear_schedule":
-    threshold = training_progress
-    # Assumes constant scaling factor - could turn this into an input variable
-  elif schedule == "exp_schedule":
-    scale = 5
-    threshold = tf.exp((training_progress - 1) * scale)
-    # [exp(-5), exp(0)] = [1e-2, 1]
-  elif schedule == "log_schedule":
-    scale = 5
-    # [1 - exp(0), 1 - exp(-5)] = [0, 0.99]
-    threshold = 1 - tf.exp((-training_progress) * scale)
-  return threshold * (end - start) + start
-
-
 def create_bert_model(
     bert_config,
     is_training,
@@ -121,7 +68,7 @@ def create_bert_model(
       token_type_ids=input_type_ids,
       use_one_hot_embeddings=use_one_hot_embeddings)
 
-  clas_logits = hidden_to_logits(
+  clas_logits = model_utils.hidden_to_logits(
       hidden=pooled,
       is_training=is_training,
       num_classes=num_labels,
@@ -144,7 +91,7 @@ def create_bert_model(
       logging.info("Applying TSA")
       # Starting threshold is just the inverse number of labels.
       tsa_start = 1. / num_labels
-      tsa_threshold = get_tsa_threshold(
+      tsa_threshold = model_utils.get_tsa_threshold(
           tsa, global_step, num_train_steps,
           tsa_start, end=1)
 
@@ -184,7 +131,7 @@ def create_bert_model(
             largest_prob, options['uda_confidence_thresh']), tf.float32)
         unsup_loss_mask = tf.stop_gradient(unsup_loss_mask)
 
-      per_example_kl_loss = kl_for_log_probs(
+      per_example_kl_loss = model_utils.kl_for_log_probs(
           tgt_ori_log_probs, aug_log_probs) * unsup_loss_mask
       unsup_loss = tf.reduce_mean(per_example_kl_loss)
 
@@ -470,7 +417,7 @@ def model_fn_builder(
           per_class_accuracy = tf.metrics.mean_per_class_accuracy(label_ids, predictions, num_labels)
           precision = tf.metrics.precision(label_ids, predictions)
           recall = tf.metrics.recall(label_ids, predictions)
- 
+
           ret_dict = {
               "eval_classify_loss": loss,
               "eval_classify_accuracy": accuracy,
