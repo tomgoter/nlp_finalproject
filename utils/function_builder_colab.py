@@ -220,14 +220,14 @@ def get_uda_classification_loss(
   else:
     cls_scope = "classification_{}".format(options['task_name'].lower())
 
-  logits = modeling.uda_logits(
+  clas_logits = modeling.uda_logits(
       hidden=summary,
       labels=labels,
       n_class=n_class,
       initializer=xlnet_model.get_initializer(),
       scope=cls_scope)
 
-  log_probs = tf.nn.log_softmax(logits, axis=-1)
+  log_probs = tf.nn.log_softmax(clas_logits, axis=-1)
   correct_label_probs = None
 
   with tf.variable_scope("sup_loss"):
