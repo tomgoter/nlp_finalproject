@@ -192,7 +192,7 @@ def get_uda_classification_loss(
   inp_mask = tf.transpose(features["input_mask"], [1, 0])
   label = tf.reshape(features["label_ids"], [bsz_per_core])
 
-  num_sample = inp.shape[0].value
+  num_sample = features["input_ids"].shape[0].value
   tf.logging.info("Batch Size {}".format(num_sample))
   if is_training:
     assert num_sample % (1 + 2 * unsup_ratio) == 0
