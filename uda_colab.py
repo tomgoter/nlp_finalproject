@@ -87,7 +87,7 @@ def get_tsa_threshold(schedule, global_step, num_train_steps, start, end):
 
 
 def create_model(
-    bert_config,
+    config,
     is_training,
     input_ids,
     input_mask,
@@ -113,7 +113,7 @@ def create_model(
     unsup_batch_size = 0
 
   pooled = modeling.bert_model(
-      config=bert_config,
+      config=config,
       is_training=is_training,
       input_ids=input_ids,
       input_mask=input_mask,
@@ -284,7 +284,7 @@ def model_fn_builder(
              per_example_loss, loss_mask,
              tsa_threshold,
              unsup_loss_mask, correct_label_probs) = create_model(
-                 bert_config=bert_config,
+                 config=config,
                  is_training=is_training,
                  input_ids=input_ids,
                  input_mask=input_mask,
