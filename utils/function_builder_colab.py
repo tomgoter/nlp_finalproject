@@ -228,6 +228,7 @@ def get_uda_classification_loss(
       scope=cls_scope)
 
   log_probs = tf.nn.log_softmax(clas_logits, axis=-1)
+  tf.logging.info(log_probs)
   correct_label_probs = None
 
   with tf.variable_scope("sup_loss"):
