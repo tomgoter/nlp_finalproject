@@ -573,4 +573,4 @@ def model_fn_builder(
     else:
         raise ValueError("Language model must be BERT or XLNET")
 
-  return model_fn
+    return model_fn
