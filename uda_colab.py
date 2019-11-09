@@ -231,7 +231,6 @@ def model_fn_builder(
     freeze_layers=(False,)):
 
     lmodel = options['language_model']
-    init_checkpoint = options['init']
     init_checkpoint=options['init_checkpoint']
     learning_rate=options['learning_rate']
     clip_norm=options['clip_norm']
