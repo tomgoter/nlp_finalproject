@@ -453,7 +453,7 @@ def model_fn_builder(
             else:
               raise ValueError("Only TRAIN, PREDICT and  EVAL modes are supported: %s" % (mode))
 
-        return output_spec
+            return output_spec
     elif lmodel == 'XLNET':
         def model_fn(features, labels, mode, params):
           #### Training or Evaluation
