@@ -331,6 +331,7 @@ def model_fn_builder(
             #           loss=total_loss,
             #           train_op=train_op)
 
+              print(metric_dict)
               ## Create host_call for training
               host_call = tpu_utils.construct_scalar_host_call(
                   metric_dict=metric_dict,
