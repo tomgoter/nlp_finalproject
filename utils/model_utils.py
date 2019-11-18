@@ -15,7 +15,7 @@ from absl import flags
 import tensorflow as tf
 
 def kl_for_log_probs(log_p, log_q):
-  logging.info("Calculating KL divergence")
+  tf.logging.info("Calculating KL divergence")
   p = tf.exp(log_p)
   neg_ent = tf.reduce_sum(p * log_p, axis=-1)
   neg_cross_ent = tf.reduce_sum(p * log_q, axis=-1)
