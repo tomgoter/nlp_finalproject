@@ -331,7 +331,7 @@ def file_based_convert_examples_to_features(
                                                         len(examples)))
 
     feature = convert_single_example(ex_index, example, label_list,
-                                     max_seq_length, tokenize_fn)
+                                     max_seq_length, tokenize_fn, aug_ops)
 
 
     features.append(
@@ -389,7 +389,7 @@ class InputFeaturesXL(object):
     '''
     return {
         "input_ids": _create_int_feature(self.input_ids),
-        "input_mask": _create_int_feature(self.input_mask),
+        "input_mask": _create_float_feature(self.input_mask),
         "segment_ids": _create_int_feature(self.segment_ids),
         "label_ids": _create_int_feature([self.label_ids]),
         "is_real_example": _create_int_feature([self.is_real_example])
@@ -443,11 +443,11 @@ class PairedUnsupInputFeaturesXL(object):
   def get_dict_features(self):
     return {
         "ori_input_ids": _create_int_feature(self.ori_input_ids),
-        "ori_input_mask": _create_int_feature(self.ori_input_mask),
+        "ori_input_mask": _create_float_feature(self.ori_input_mask),
         "ori_segment_ids": _create_int_feature(self.ori_segment_ids),
         "ori_is_real_example": _create_int_feature([self.ori_is_real_example]),
         "aug_input_ids": _create_int_feature(self.aug_input_ids),
-        "aug_input_mask": _create_int_feature(self.aug_input_mask),
+        "aug_input_mask": _create_float_feature(self.aug_input_mask),
         "aug_segment_ids": _create_int_feature(self.aug_segment_ids),
         "aug_is_real_example": _create_int_feature([self.aug_is_real_example]),
     }
@@ -572,13 +572,6 @@ def proc_and_save_sup_data_xlnet(
     assert replicas == 1, "dev set can be processsed with just one worker"
     assert sup_size == -1, "should use the full test set"
 
-  if FLAGS.xlnet == True:
-    spm_basename  =  os.path.basename(FLAGS.spiece_model_file)
-    train_file_base = "{}.len-{}.train.tf_record".format(
-        spm_basename, max_seq_length)
-    train_file = os.path.join(sup_out_dir, train_file_base)
-    tf.logging.info("Use tfrecord file {}".format(train_file))
-
   if sup_size != -1:
     logging.info("setting number of examples to {:d}".format(
         sup_size))
@@ -598,7 +591,7 @@ def proc_and_save_sup_data_xlnet(
       examples, processor.get_labels(), max_seq_length,
       tokenize_fn, num_passes=1)
 
-  dump_tfrecord(features, train_file, worker_id)
+  dump_tfrecord(features, sup_out_dir, worker_id)
 
 
 def proc_and_save_unsup_data(
@@ -711,10 +704,10 @@ def proc_and_save_unsup_data_xlnet(
       start, end, data_total_size)
 
   labels = processor.get_labels() + ["unsup"]
-  logging.info("processing ori examples")
+  logging.info("processing ori examples with labels: {}".format(labels))
 
   ori_features = file_based_convert_examples_to_features(
-      ori_examples, processor.get_labels(), max_seq_length,
+      ori_examples, labels, max_seq_length,
       tokenize_fn, num_passes=1)
 
   tokenized_ori_examples = tokenize_examples(
@@ -730,12 +723,13 @@ def proc_and_save_unsup_data_xlnet(
   logging.info("processing aug examples using aug ops {}".format(aug_ops))
 
   aug_features = file_based_convert_examples_to_features(
-      aug_examples, processor.get_labels(), max_seq_length,
+      aug_examples, labels, max_seq_length,
       tokenize_fn, num_passes=1, data_stats=data_stats, aug_ops=aug_ops)
 
   logging.info("{} Original Features".format(len(ori_features)))
   logging.info("{} Augmented Features".format(len(aug_features)))
   unsup_features = []
+
   for ori_feat, aug_feat in zip(ori_features, aug_features):
     unsup_features.append(PairedUnsupInputFeaturesXL(
         ori_feat.input_ids,

@@ -67,25 +67,12 @@ def get_xlnet_sup_feature_specs(max_seq_len):
   """
   feature_specs = {
       "input_ids": tf.FixedLenFeature([max_seq_len], tf.int64),
-      "input_mask": tf.FixedLenFeature([max_seq_len], tf.int64),
+      "input_mask": tf.FixedLenFeature([max_seq_len], tf.float32),
       "segment_ids": tf.FixedLenFeature([max_seq_len], tf.int64),
       "label_ids": tf.FixedLenFeature([], tf.int64),
       "is_real_example": tf.FixedLenFeature([], tf.int64),
   }
 
-  return feature_specs
-
-def get_sup_feature_specs_eval(max_seq_len):
-
-  """
-  This function creates a dictionary which maps feature names to
-  Fixed Length Features of the appropriate dimensions.
-  """
-  feature_specs = collections.OrderedDict()
-  feature_specs["input_ids"] = tf.io.FixedLenFeature([max_seq_len], tf.int64)
-  feature_specs["input_mask"] = tf.io.FixedLenFeature([max_seq_len], tf.int64)
-  feature_specs["input_type_ids"] = tf.io.FixedLenFeature([max_seq_len], tf.int64)
-  feature_specs["label_ids"] = tf.io.FixedLenFeature([1], tf.int64)
   return feature_specs
 
 
@@ -106,6 +93,31 @@ def get_unsup_feature_specs(max_seq_len):
   feature_specs["aug_input_mask"] = tf.io.FixedLenFeature(
         [max_seq_len], tf.int64)
   feature_specs["aug_input_type_ids"] = tf.io.FixedLenFeature(
+        [max_seq_len], tf.int64)
+  return feature_specs
+
+
+def get_xlnet_unsup_feature_specs(max_seq_len):
+  """
+  This function creates a dictionary which maps feature names to
+  Fixed Length Features of the appropriate dimensions.
+  """
+  feature_specs = collections.OrderedDict()
+  feature_specs["ori_input_ids"] = tf.io.FixedLenFeature(
+        [max_seq_len], tf.int64)
+  feature_specs["ori_input_mask"] = tf.io.FixedLenFeature(
+        [max_seq_len], tf.float32)
+  feature_specs["ori_segment_ids"] = tf.io.FixedLenFeature(
+        [max_seq_len], tf.int64)
+    feature_specs["ori_is_real_example"] = tf.io.FixedLenFeature(
+        [max_seq_len], tf.int64)
+      feature_specs["aug_input_ids"] = tf.io.FixedLenFeature(
+        [max_seq_len], tf.int64)
+  feature_specs["aug_input_mask"] = tf.io.FixedLenFeature(
+        [max_seq_len], tf.float32)
+  feature_specs["aug_segment_ids"] = tf.io.FixedLenFeature(
+        [max_seq_len], tf.int64)
+  feature_specs["aug_is_real_example"] = tf.io.FixedLenFeature(
         [max_seq_len], tf.int64)
   return feature_specs
 
@@ -283,12 +295,20 @@ def training_input_fn_builder(
 
       ## only consider unsupervised data when supervised data is considered
       if unsup_data_base_path is not None and unsup_ratio > 0:
-        unsup_dst = get_training_dataset(
-            unsup_total_data_files,
-            sup_batch_size * unsup_ratio,
-            is_training,
-            shuffle_buffer_size,
-            get_unsup_feature_specs(max_seq_len))
+        if lmodel == 'BERT':
+          unsup_dst = get_training_dataset(
+              unsup_total_data_files,
+              sup_batch_size * unsup_ratio,
+              is_training,
+              shuffle_buffer_size,
+              get_unsup_feature_specs(max_seq_len))
+        elif lmodel == 'XLNET':
+          unsup_dst = get_training_dataset(
+              unsup_total_data_files,
+              sup_batch_size * unsup_ratio,
+              is_training,
+              shuffle_buffer_size,
+              get_xlnet_unsup_feature_specs(max_seq_len))
         total_batch_size += sup_batch_size * unsup_ratio * 2
         dataset_list.append(unsup_dst)
         tf.logging.info("unsup batch size: %d", (sup_batch_size * unsup_ratio))
