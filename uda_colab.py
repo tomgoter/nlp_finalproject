@@ -430,7 +430,7 @@ def model_fn_builder(
             logging.info("Creating supervised model")
             input_ids = features["input_ids"]
             input_mask = features["input_mask"]
-            input_type_ids = features["segment_ids"]
+            segment_ids = features["segment_ids"]
 
           (sup_loss, unsup_loss, logits,
              per_example_loss, loss_mask,
