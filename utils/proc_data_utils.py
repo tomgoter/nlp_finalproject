@@ -109,9 +109,9 @@ def get_xlnet_unsup_feature_specs(max_seq_len):
         [max_seq_len], tf.float32)
   feature_specs["ori_segment_ids"] = tf.io.FixedLenFeature(
         [max_seq_len], tf.int64)
-    feature_specs["ori_is_real_example"] = tf.io.FixedLenFeature(
+  feature_specs["ori_is_real_example"] = tf.io.FixedLenFeature(
         [max_seq_len], tf.int64)
-      feature_specs["aug_input_ids"] = tf.io.FixedLenFeature(
+  feature_specs["aug_input_ids"] = tf.io.FixedLenFeature(
         [max_seq_len], tf.int64)
   feature_specs["aug_input_mask"] = tf.io.FixedLenFeature(
         [max_seq_len], tf.float32)
