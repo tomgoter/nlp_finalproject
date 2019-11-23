@@ -248,7 +248,7 @@ def get_uda_classification_loss(
     if tsa:
       tf.logging.info("Applying TSA")
       # Starting threshold is just the inverse number of labels.
-      tsa_start = 1. / num_labels
+      tsa_start = 1. / n_class
       tsa_threshold = model_utils.get_tsa_threshold(
           tsa, global_step, num_train_steps,
           tsa_start, end=1)
