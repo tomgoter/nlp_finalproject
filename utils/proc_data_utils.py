@@ -69,8 +69,8 @@ def get_xlnet_sup_feature_specs(max_seq_len):
       "input_ids": tf.FixedLenFeature([max_seq_len], tf.int64),
       "input_mask": tf.FixedLenFeature([max_seq_len], tf.float32),
       "segment_ids": tf.FixedLenFeature([max_seq_len], tf.int64),
-      "label_ids": tf.FixedLenFeature([], tf.int64),
-      "is_real_example": tf.FixedLenFeature([], tf.int64),
+      "label_ids": tf.FixedLenFeature([1], tf.int64),
+      "is_real_example": tf.FixedLenFeature([1], tf.int64),
   }
 
   return feature_specs
@@ -110,7 +110,7 @@ def get_xlnet_unsup_feature_specs(max_seq_len):
   feature_specs["ori_segment_ids"] = tf.io.FixedLenFeature(
         [max_seq_len], tf.int64)
   feature_specs["ori_is_real_example"] = tf.io.FixedLenFeature(
-        [max_seq_len], tf.int64)
+        [1], tf.int64)
   feature_specs["aug_input_ids"] = tf.io.FixedLenFeature(
         [max_seq_len], tf.int64)
   feature_specs["aug_input_mask"] = tf.io.FixedLenFeature(
@@ -118,7 +118,7 @@ def get_xlnet_unsup_feature_specs(max_seq_len):
   feature_specs["aug_segment_ids"] = tf.io.FixedLenFeature(
         [max_seq_len], tf.int64)
   feature_specs["aug_is_real_example"] = tf.io.FixedLenFeature(
-        [max_seq_len], tf.int64)
+        [1], tf.int64)
   return feature_specs
 
 
