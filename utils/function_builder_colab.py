@@ -186,12 +186,11 @@ def get_uda_classification_loss(
   uda_softmax_temp = options['uda_softmax_temp']
   uda_confidence_thresh = options['uda_confidence_thresh']
 
-  bsz_per_core = tf.shape(input_ids)[0]
+
 
   inp = tf.transpose(input_ids, [1, 0])
   seg_id = tf.transpose(segment_ids, [1, 0])
-  inp_mask = tf.transpose(input_mask, [1, 0])
-  labels = tf.reshape(labels, [bsz_per_core])
+  inp_mask = tf.transpose(input_mask, [1, 0]) 
 
   num_sample = input_ids.shape[0].value
   tf.logging("Num samples: {}".format(num_sample))
@@ -200,10 +199,14 @@ def get_uda_classification_loss(
     assert num_sample % (1 + 2 * unsup_ratio) == 0
     sup_batch_size = num_sample // (1 + 2 * unsup_ratio)
     unsup_batch_size = sup_batch_size * unsup_ratio
+    bsz_per_core = tf.shape(input_ids)[0] // (1 + 2 * unsup_ratio)
+    
   else:
     sup_batch_size = num_sample
     unsup_batch_size = 0
-
+    bsz_per_core = tf.shape(input_ids)[0]
+    
+  labels = tf.reshape(labels, [bsz_per_core])
   xlnet_config = xlnet_colab.XLNetConfig(json_path=options['model_config_file'])
   run_config = xlnet_colab.create_run_config(is_training, True, options)
 
@@ -235,7 +238,7 @@ def get_uda_classification_loss(
 
   with tf.variable_scope("sup_loss"):
     sup_log_probs = log_probs[:sup_batch_size]
-    one_hot_labels = tf.one_hot(features["label_ids"], depth=n_class, dtype=tf.float32)
+    one_hot_labels = tf.one_hot(labels, depth=n_class, dtype=tf.float32)
     tgt_label_prob = one_hot_labels
 
     per_example_loss = -tf.reduce_sum(tgt_label_prob * sup_log_probs, axis=-1)
