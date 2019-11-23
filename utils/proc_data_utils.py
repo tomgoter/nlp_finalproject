@@ -67,7 +67,7 @@ def get_xlnet_sup_feature_specs(max_seq_len):
   """
   feature_specs = {
       "input_ids": tf.FixedLenFeature([max_seq_len], tf.int64),
-      "input_mask": tf.FixedLenFeature([max_seq_len], tf.float32),
+      "input_mask": tf.FixedLenFeature([max_seq_len], tf.int64),
       "segment_ids": tf.FixedLenFeature([max_seq_len], tf.int64),
       "label_ids": tf.FixedLenFeature([], tf.int64),
       "is_real_example": tf.FixedLenFeature([], tf.int64),
@@ -227,10 +227,8 @@ def training_input_fn_builder(
     prefetch_size=1000,
     max_seq_len=None):
 
-  if lmodel == 'BERT':
-      file_string = "tf_examples.tfrecord*"
-  elif lmodel == 'XLNET':
-      file_string = "spiece.model*"
+
+    file_string = "tf_examples.tfrecord*"
 
   # Generate list of input files from which to grab our records
   sup_total_data_files = tf.contrib.slim.parallel_reader.get_data_files(
