@@ -193,7 +193,6 @@ def get_uda_classification_loss(
   inp_mask = tf.transpose(input_mask, [1, 0]) 
 
   num_sample = input_ids.shape[0].value
-  tf.logging("Num samples: {}".format(num_sample))
 
   if is_training:
     assert num_sample % (1 + 2 * unsup_ratio) == 0
