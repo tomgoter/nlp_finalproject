@@ -246,7 +246,7 @@ def get_uda_classification_loss(
         one_hot_labels * tf.exp(sup_log_probs), axis=-1)
 
     if tsa:
-      logging.info("Applying TSA")
+      tf.logging.info("Applying TSA")
       # Starting threshold is just the inverse number of labels.
       tsa_start = 1. / num_labels
       tsa_threshold = model_utils.get_tsa_threshold(
