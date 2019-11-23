@@ -436,7 +436,10 @@ def model_fn_builder(
              per_example_loss, loss_mask,
              tsa_threshold,
              unsup_loss_mask, correct_label_probs) = function_builder_colab.get_uda_classification_loss(
-                  options, features, num_labels, is_training, global_step)
+                  options, features, num_labels, is_training, global_step, input_ids=input_ids,
+                 input_mask=input_mask,
+                 segment_ids=segment_ids,
+                 labels=label_ids)
 
           ##### Aggregate losses into total_loss
           metric_dict = {}

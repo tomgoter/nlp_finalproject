@@ -175,7 +175,8 @@ def get_classification_loss(
     return total_loss, per_example_loss, logits
 
 def get_uda_classification_loss(
-    options, features, n_class, is_training, global_step):
+    options, features, n_class, is_training, global_step,
+    input_ids,input_mask,segment_ids, labels):
   """Loss for downstream classification tasks."""
 
 
@@ -185,14 +186,15 @@ def get_uda_classification_loss(
   uda_softmax_temp = options['uda_softmax_temp']
   uda_confidence_thresh = options['uda_confidence_thresh']
 
-  bsz_per_core = tf.shape(features["input_ids"])[0]
+  bsz_per_core = tf.shape(input_ids)[0]
 
-  inp = tf.transpose(features["input_ids"], [1, 0])
-  seg_id = tf.transpose(features["segment_ids"], [1, 0])
-  inp_mask = tf.transpose(features["input_mask"], [1, 0])
-  labels = tf.reshape(features["label_ids"], [bsz_per_core])
+  inp = tf.transpose(input_ids, [1, 0])
+  seg_id = tf.transpose(segment_ids, [1, 0])
+  inp_mask = tf.transpose(input_mask, [1, 0])
+  labels = tf.reshape(labels, [bsz_per_core])
 
-  num_sample = features["input_ids"].shape[0].value
+  num_sample = input_ids.shape[0].value
+  tf.logging("Num samples: {}".format(num_sample))
 
   if is_training:
     assert num_sample % (1 + 2 * unsup_ratio) == 0
