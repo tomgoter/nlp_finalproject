@@ -182,10 +182,8 @@ def evaluation_input_fn_builder(
     prefetch_size=1000,
     options=None,
     max_seq_len=None):
-  if lmodel == 'BERT':
-    file_string = "tf_examples.tfrecord*"
-  elif lmodel == 'XLNET':
-    file_string = "spiece.model*"
+  
+  file_string = "tf_examples.tfrecord*"
   total_data_files = tf.contrib.slim.parallel_reader.get_data_files(
       os.path.join(data_base_path, file_string))
   tf.logging.info("loading eval {} data from these files: {:s}".format(
