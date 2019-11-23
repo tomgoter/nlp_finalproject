@@ -228,7 +228,7 @@ def training_input_fn_builder(
     max_seq_len=None):
 
 
-    file_string = "tf_examples.tfrecord*"
+  file_string = "tf_examples.tfrecord*"
 
   # Generate list of input files from which to grab our records
   sup_total_data_files = tf.contrib.slim.parallel_reader.get_data_files(
