@@ -18,7 +18,7 @@
 
 set sub_set =  ( 'unsup' 'unsup' 'unsup' 'unsup' 'unsup' 'unsup' 'unsup' 'unsup' 'unsup' )
 set probs =    (    0.1     0.2     0.3     0.4     0.5     0.6     0.7     0.8     0.9  )
-foreach  i      (      2 3 4 5 9 7 8 )
+foreach  i      (     `seq 1 9` )
 #foreach i      (      1       2       3       4       5       6       7       8       9  )
 
   # Run the cases

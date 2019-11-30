@@ -17,7 +17,7 @@
 # Set up cases to process data for
 set sup_size = (     20     200    2000    5000   12000     0      0 )
 set sub_set =  ( 'train' 'train' 'train' 'train' 'train' 'dev' 'test')
-foreach i      (      3 4 5 7      )
+foreach i      ( `seq 1 7`)             
 
   # Run the cases
   echo Running on ${sub_set[${i}]} set

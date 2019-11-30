@@ -133,6 +133,7 @@ def get_data_stats(examples):
       if word not in tf_idf:
         tf_idf[word] = 0
       tf_idf[word] += 1. / len(cur_sent) * idf[word]
+
   return {
       "idf": idf,
       "tf_idf": tf_idf,
@@ -225,7 +226,7 @@ class TfIdfWordRep(EfficientRandomGen):
     for idx in token_list_idx:
       self.token_list += [self.tf_idf_keys[idx]]
     self.token_ptr = len(self.token_list) - 1
-    tf.logging.info("sampled token list: {:s}".format(
+    tf.logging.debug("sampled token list: {:s}".format(
         filter_unicode(" ".join(self.token_list))))
 
 

@@ -324,14 +324,8 @@ def model_fn_builder(
 
               # Needed to cast the learning rate from the dictionary from a string to a float
               metric_dict["learning_rate"] = tf.cast(curr_lr, tf.float32)
-
-            #       # Specify the output from the estimator. train_op applies the gradients and advances the step
-            #       output_spec = tf.estimator.EstimatorSpec(
-            #           mode=mode,
-            #           loss=total_loss,
-            #           train_op=train_op)
-
               print(metric_dict)
+
               ## Create host_call for training
               host_call = tpu_utils.construct_scalar_host_call(
                   metric_dict=metric_dict,
@@ -373,11 +367,6 @@ def model_fn_builder(
 
               eval_metrics = (clas_metric_fn, [per_example_loss, label_ids, logits])
 
-            #       output_spec = tf.estimator.EstimatorSpec(
-            #           mode=mode,
-            #           loss=total_loss,
-            #           eval_metric_ops=eval_metrics)
-
               output_spec = tf.contrib.tpu.TPUEstimatorSpec(
                   mode=mode,
                   loss=total_loss,
@@ -386,21 +375,16 @@ def model_fn_builder(
 
             elif mode == tf.estimator.ModeKeys.PREDICT:
 
-            #       output_spec = tf.estimator.EstimatorSpec(
-            #           mode=mode,
-            #           loss=None,
-            #           predictions=predictions)
-
               output_spec = tf.contrib.tpu.TPUEstimatorSpec(
                   mode=mode,
                   loss=None,
                   predictions=predictions,
                   scaffold_fn=scaffold_fn)
-
             else:
               raise ValueError("Only TRAIN, PREDICT and  EVAL modes are supported: %s" % (mode))
 
             return output_spec
+
     elif lmodel == 'XLNET':
         def model_fn(features, labels, mode, params):
           #### Training or Evaluation
@@ -522,13 +506,13 @@ def model_fn_builder(
             return eval_spec
 
           elif mode == tf.estimator.ModeKeys.PREDICT:
-            label_ids = tf.reshape(features["label_ids"], [-1])
-
-            predictions = {
-                  "logits": logits,
-                  "labels": label_ids,
-                  "is_real": features["is_real_example"]
-              }
+            # label_ids = tf.reshape(features["label_ids"], [-1])
+            #
+            # predictions = {
+            #       "logits": logits,
+            #       "labels": label_ids,
+            #       "is_real": features["is_real_example"]
+            #   }
 
             if use_tpu:
               output_spec = tf.contrib.tpu.TPUEstimatorSpec(
@@ -543,15 +527,15 @@ def model_fn_builder(
 
           metric_dict["lr"] = learning_rate
 
-          #### Constucting training TPUEstimatorSpec with new cache.
-          # if use_tpu:
-            #### Creating host calls
-          label_ids = tf.reshape(features['label_ids'], [-1])
-          predictions = tf.argmax(logits, axis=-1, output_type=label_ids.dtype)
-          is_correct = tf.equal(predictions, label_ids)
-          accuracy = tf.reduce_mean(tf.cast(is_correct, tf.float32))
-
-          metric_dict["accuracy"] = accuracy
+          # #### Constucting training TPUEstimatorSpec with new cache.
+          # # if use_tpu:
+          #   #### Creating host calls
+          # label_ids = tf.reshape(features['label_ids'], [-1])
+          # predictions = tf.argmax(logits, axis=-1, output_type=label_ids.dtype)
+          # is_correct = tf.equal(predictions, label_ids)
+          # accuracy = tf.reduce_mean(tf.cast(is_correct, tf.float32))
+          #
+          # metric_dict["accuracy"] = accuracy
 
           host_call = function_builder_colab.construct_scalar_host_call(
                     monitor_dict=metric_dict,

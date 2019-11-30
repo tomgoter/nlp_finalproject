@@ -31,11 +31,11 @@ from absl import app
 from absl import flags
 from absl import logging
 
-from utils import function_builder, model_utils
+from utils import function_builder, model_utils, tpu_utils
 
 
-def create_bert_model(
-    bert_config,
+def create_model(
+    config,
     is_training,
     input_ids,
     input_mask,
@@ -61,7 +61,7 @@ def create_bert_model(
     unsup_batch_size = 0
 
   pooled = modeling.bert_model(
-      config=bert_config,
+      config=config,
       is_training=is_training,
       input_ids=input_ids,
       input_mask=input_mask,
@@ -117,7 +117,7 @@ def create_bert_model(
       ori_log_probs = log_probs[ori_start : ori_end]
       aug_log_probs = log_probs[aug_start : aug_end]
       unsup_loss_mask = 1
-      if options['uda_softmax_temp'] != -1:
+      if uda_softmax_temp != -1:
         tgt_ori_log_probs = tf.nn.log_softmax(
             clas_logits[ori_start : ori_end] / options['uda_softmax_temp'],
             axis=-1)
@@ -125,7 +125,7 @@ def create_bert_model(
       else:
         tgt_ori_log_probs = tf.stop_gradient(ori_log_probs)
 
-      if options['uda_confidence_thresh'] != -1:
+      if uda_confidence_thresh != -1:
         largest_prob = tf.reduce_max(tf.exp(ori_log_probs), axis=-1)
         unsup_loss_mask = tf.cast(tf.greater(
             largest_prob, options['uda_confidence_thresh']), tf.float32)
@@ -179,7 +179,6 @@ def model_fn_builder(
     freeze_layers=(False,)):
 
   lmodel = options['language_model']
-  init_checkpoint = options['init']
   init_checkpoint=options['init_checkpoint']
   learning_rate=options['learning_rate']
   clip_norm=options['clip_norm']
@@ -194,8 +193,6 @@ def model_fn_builder(
   uda_confidence_thresh = options['uda_confidence_thresh']
 
   if lmodel == 'BERT':
-
-    """Returns `model_fn` ."""
     def model_fn(features, labels, mode, params):  # pylint: disable=unused-argument
       """The `model_fn` for Estimator."""
       if print_feature:
@@ -234,22 +231,22 @@ def model_fn_builder(
       (sup_loss, unsup_loss, logits,
          per_example_loss, loss_mask,
          tsa_threshold,
-         unsup_loss_mask, correct_label_probs) = create_bert_model(
-             bert_config=config,
-             is_training=is_training,
-             input_ids=input_ids,
-             input_mask=input_mask,
-             input_type_ids=input_type_ids,
-             labels=label_ids,
-             num_labels=num_labels,
-             use_one_hot_embeddings=use_one_hot_embeddings,
-             tsa=tsa,
-             unsup_ratio=unsup_ratio,
-             global_step=global_step,
-             num_train_steps=num_train_steps,
-             uda_softmax_temp=uda_softmax_temp,
-             uda_confidence_thresh=uda_confidence_thresh
-             )
+         unsup_loss_mask, correct_label_probs) = create_model(
+                 config=config,
+                 is_training=is_training,
+                 input_ids=input_ids,
+                 input_mask=input_mask,
+                 input_type_ids=input_type_ids,
+                 labels=label_ids,
+                 num_labels=num_labels,
+                 use_one_hot_embeddings=use_one_hot_embeddings,
+                 tsa=tsa,
+                 unsup_ratio=unsup_ratio,
+                 global_step=global_step,
+                 num_train_steps=num_train_steps,
+                 uda_softmax_temp=uda_softmax_temp,
+                 uda_confidence_thresh=uda_confidence_thresh
+                 )
 
       ##### Aggregate losses into total_loss
       metric_dict = {}
@@ -277,6 +274,7 @@ def model_fn_builder(
 
       ##### Initialize variables with pre-trained models
       tvars = tf.compat.v1.trainable_variables()
+
         # Freeze all the layers but the output
       if freeze_layers[0]:
         layers = [tvar for tvar in tvars if tvar.name.startswith('bert')]
@@ -285,7 +283,8 @@ def model_fn_builder(
         # Train embedding layer
         frozen_layers = [fl for fl in frozen_layers if fl.name.find('embedding') < 0]
         # Train last attention layer
-        frozen_layers = [fl for fl in frozen_layers if fl.name.find('layer_{}'.format(freeze_layers[1])) < 0]
+        for layer_c in range(freeze_layers[1], 12):
+            frozen_layers = [fl for fl in frozen_layers if fl.name.find('layer_{}'.format(layer_c)) < 0]
         tf.logging.debug("Freezing {}".format(frozen_layers))
         tvars = [tvar for tvar in tvars if tvar not in frozen_layers]
 
@@ -323,8 +322,10 @@ def model_fn_builder(
         train_op, curr_lr = optimization.create_optimizer(
             total_loss, learning_rate, num_train_steps, num_warmup_steps,
             clip_norm, global_step, freeze_layers, num_labels, use_tpu)
+
         # Needed to cast the learning rate from the dictionary from a string to a float
         metric_dict["learning_rate"] = tf.cast(curr_lr, tf.float32)
+        print(metric_dict)
 
         ## Create host_call for training
         host_call = tpu_utils.construct_scalar_host_call(
@@ -385,121 +386,175 @@ def model_fn_builder(
       return output_spec
 
   elif lmodel == 'XLNET':
-    def model_fn(features, labels, mode, params):
-      #### Training or Evaluation
-      is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+      def model_fn(features, labels, mode, params):
+          #### Training or Evaluation
+          is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
-      #### Get loss from inputs
-      (total_loss, per_example_loss, logits) = function_builder.get_classification_loss(
-              options, features, num_labels, is_training)
+          global_step = tf.train.get_or_create_global_step()
 
-      #### Check model parameters
-      num_params = sum([np.prod(v.shape) for v in tf.trainable_variables()])
-      tf.logging.info('#params: {}'.format(num_params))
+          ##### Classification objective
+          label_ids = features["label_ids"]
+          label_ids = tf.reshape(label_ids, [-1])
 
-      #### load pretrained models
-      scaffold_fn = model_utils.init_from_checkpoint(options)
+          if unsup_ratio > 0 and "ori_input_ids" in features:
+            logging.info("Creating UDA model")
+            input_ids = tf.concat([
+                features["input_ids"],
+                features["ori_input_ids"],
+                features["aug_input_ids"]], 0)
+            input_mask = tf.concat([
+                features["input_mask"],
+                features["ori_input_mask"],
+                features["aug_input_mask"]], 0)
+            segment_ids = tf.concat([
+                features["segment_ids"],
+                features["ori_segment_ids"],
+                features["aug_segment_ids"]], 0)
+          else:
+            logging.info("Creating supervised model")
+            input_ids = features["input_ids"]
+            input_mask = features["input_mask"]
+            segment_ids = features["segment_ids"]
 
-      #### Evaluation mode
-      if mode == tf.estimator.ModeKeys.EVAL:
-        assert options['num_hosts'] == 1
+          (sup_loss, unsup_loss, logits,
+             per_example_loss, loss_mask,
+             tsa_threshold,
+             unsup_loss_mask, correct_label_probs) = function_builder.get_uda_classification_loss(
+                  options, features, num_labels, is_training, global_step, input_ids=input_ids,
+                 input_mask=input_mask,
+                 segment_ids=segment_ids,
+                 labels=label_ids)
 
-        def metric_fn(per_example_loss, label_ids, logits, is_real_example):
-          predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
-          eval_input_dict = {
-                'labels': label_ids,
-                'predictions': predictions,
-                'weights': is_real_example
-            }
-          accuracy = tf.metrics.accuracy(**eval_input_dict)
+          ##### Aggregate losses into total_loss
+          metric_dict = {}
 
-          loss = tf.metrics.mean(values=per_example_loss, weights=is_real_example)
-          per_class_accuracy = tf.metrics.mean_per_class_accuracy(label_ids, predictions, num_labels)
-          precision = tf.metrics.precision(label_ids, predictions)
-          recall = tf.metrics.recall(label_ids, predictions)
+          # number of correct predictions
+          predictions = tf.argmax(logits, axis=-1, output_type=label_ids.dtype)
+          is_correct = tf.cast(tf.equal(predictions, label_ids), tf.float32)
+          acc = tf.reduce_mean(is_correct)
+          # add sup. metrics to dict
+          metric_dict["sup/loss"] = sup_loss
+          metric_dict["sup/accu"] = acc
+          metric_dict["sup/correct_cat_probs"] = correct_label_probs
+          metric_dict["sup/tsa_threshold"] = tsa_threshold
 
-          ret_dict = {
-              "eval_classify_loss": loss,
-              "eval_classify_accuracy": accuracy,
-              "eval_precision": precision,
-              "eval_recall": recall,
-              "eval_mpca":per_class_accuracy
-          }
+          metric_dict["sup/sup_trained_ratio"] = tf.reduce_mean(loss_mask)
+          total_loss = sup_loss
 
-          return ret_dict
+          # If using UDA add the unsupervised loss to the supervised loss
+          if unsup_ratio > 0 and uda_coeff > 0 and "input_ids" in features:
+            total_loss += uda_coeff * unsup_loss
+            metric_dict["unsup/loss"] = unsup_loss
 
-        is_real_example = tf.cast(features["is_real_example"], dtype=tf.float32)
+          if unsup_loss_mask is not None:
+            metric_dict["unsup/high_prob_ratio"] = tf.reduce_mean(unsup_loss_mask)
 
-        #### Constucting evaluation TPUEstimatorSpec with new cache.
-        label_ids = tf.reshape(features['label_ids'], [-1])
+          #### Check model parameters
+          num_params = sum([np.prod(v.shape) for v in tf.trainable_variables()])
+          tf.logging.info('#params: {}'.format(num_params))
 
-        metric_args = [per_example_loss, label_ids, logits, is_real_example]
+          #### load pretrained models
+          scaffold_fn = model_utils.init_from_checkpoint(options)
 
-        if use_tpu:
-          eval_spec = tf.contrib.tpu.TPUEstimatorSpec(
-                mode=mode,
-                loss=total_loss,
-                eval_metrics=(metric_fn, metric_args),
-                scaffold_fn=scaffold_fn)
-        else:
-          eval_spec = tf.estimator.EstimatorSpec(
-                mode=mode,
-                loss=total_loss,
-                eval_metric_ops=metric_fn(*metric_args))
+          #### Evaluation mode
+          if mode == tf.estimator.ModeKeys.EVAL:
+            assert options['num_hosts'] == 1
 
-        return eval_spec
+            def metric_fn(per_example_loss, label_ids, logits, is_real_example):
+              predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+              eval_input_dict = {
+                    'labels': label_ids,
+                    'predictions': predictions,
+                    'weights': is_real_example
+                }
+              accuracy = tf.metrics.accuracy(**eval_input_dict)
 
-      elif mode == tf.estimator.ModeKeys.PREDICT:
-        label_ids = tf.reshape(features["label_ids"], [-1])
+              loss = tf.metrics.mean(values=per_example_loss, weights=is_real_example)
+              per_class_accuracy = tf.metrics.mean_per_class_accuracy(label_ids, predictions, num_labels)
+              precision = tf.metrics.precision(label_ids, predictions)
+              recall = tf.metrics.recall(label_ids, predictions)
 
-        predictions = {
-              "logits": logits,
-              "labels": label_ids,
-              "is_real": features["is_real_example"]
-          }
+              ret_dict = {
+                  "eval_classify_loss": loss,
+                  "eval_classify_accuracy": accuracy,
+                  "eval_precision": precision,
+                  "eval_recall": recall,
+                  "eval_mpca":per_class_accuracy
+              }
 
-        if use_tpu:
-          output_spec = tf.contrib.tpu.TPUEstimatorSpec(
-                mode=mode, predictions=predictions, scaffold_fn=scaffold_fn)
-        else:
-          output_spec = tf.estimator.EstimatorSpec(
-                mode=mode, predictions=predictions)
-        return output_spec
+              return ret_dict
 
-      #### Configuring the optimizer
-      train_op, learning_rate, _ = model_utils.get_train_op(options, total_loss)
+            is_real_example = tf.cast(features["is_real_example"], dtype=tf.float32)
 
-      monitor_dict = {}
-      monitor_dict["lr"] = learning_rate
+            #### Constucting evaluation TPUEstimatorSpec with new cache.
+            label_ids = tf.reshape(features['label_ids'], [-1])
 
-      #### Constucting training TPUEstimatorSpec with new cache.
-      # if use_tpu:
-        #### Creating host calls
-      label_ids = tf.reshape(features['label_ids'], [-1])
-      predictions = tf.argmax(logits, axis=-1, output_type=label_ids.dtype)
-      is_correct = tf.equal(predictions, label_ids)
-      accuracy = tf.reduce_mean(tf.cast(is_correct, tf.float32))
+            metric_args = [per_example_loss, label_ids, logits, is_real_example]
 
-      monitor_dict["accuracy"] = accuracy
+            if use_tpu:
+              eval_spec = tf.contrib.tpu.TPUEstimatorSpec(
+                    mode=mode,
+                    loss=total_loss,
+                    eval_metrics=(metric_fn, metric_args),
+                    scaffold_fn=scaffold_fn)
+            else:
+              eval_spec = tf.estimator.EstimatorSpec(
+                    mode=mode,
+                    loss=total_loss,
+                    eval_metric_ops=metric_fn(*metric_args))
 
-      host_call = function_builder.construct_scalar_host_call(
-                monitor_dict=monitor_dict,
-                model_dir=options['model_dir'],
-                prefix="train/",
-                reduce_fn=tf.reduce_mean)
+            return eval_spec
 
-      train_spec = tf.contrib.tpu.TPUEstimatorSpec(
-              mode=mode,
-              loss=total_loss,
-              train_op=train_op,
-              host_call=host_call,
-              scaffold_fn=scaffold_fn)
-      # else:
-      #   train_spec = tf.estimator.EstimatorSpec(
-      #         mode=mode, loss=total_loss, train_op=train_op)
+          elif mode == tf.estimator.ModeKeys.PREDICT:
+            # label_ids = tf.reshape(features["label_ids"], [-1])
+            #
+            # predictions = {
+            #       "logits": logits,
+            #       "labels": label_ids,
+            #       "is_real": features["is_real_example"]
+            #   }
 
-      return train_spec
+            if use_tpu:
+              output_spec = tf.contrib.tpu.TPUEstimatorSpec(
+                    mode=mode, predictions=predictions, scaffold_fn=scaffold_fn)
+            else:
+              output_spec = tf.estimator.EstimatorSpec(
+                    mode=mode, predictions=predictions)
+            return output_spec
+
+          #### Configuring the optimizer
+          train_op, learning_rate, _ = model_utils.get_train_op(options, total_loss)
+
+          metric_dict["lr"] = learning_rate
+
+          # #### Constucting training TPUEstimatorSpec with new cache.
+          # # if use_tpu:
+          #   #### Creating host calls
+          # label_ids = tf.reshape(features['label_ids'], [-1])
+          # predictions = tf.argmax(logits, axis=-1, output_type=label_ids.dtype)
+          # is_correct = tf.equal(predictions, label_ids)
+          # accuracy = tf.reduce_mean(tf.cast(is_correct, tf.float32))
+          #
+          # metric_dict["accuracy"] = accuracy
+
+          host_call = function_builder_colab.construct_scalar_host_call(
+                    monitor_dict=metric_dict,
+                    model_dir=options['model_dir'],
+                    prefix="train/",
+                    reduce_fn=tf.reduce_mean)
+
+          train_spec = tf.contrib.tpu.TPUEstimatorSpec(
+                  mode=mode,
+                  loss=total_loss,
+                  train_op=train_op,
+                  host_call=host_call,
+                  scaffold_fn=scaffold_fn)
+          # else:
+          #   train_spec = tf.estimator.EstimatorSpec(
+          #         mode=mode, loss=total_loss, train_op=train_op)
+
+          return train_spec
   else:
-    raise ValueError("Language model must be BERT or XLNET")
+        raise ValueError("Language model must be BERT or XLNET")
 
   return model_fn

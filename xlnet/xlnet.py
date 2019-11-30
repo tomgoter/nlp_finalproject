@@ -5,7 +5,7 @@ from __future__ import print_function
 import json
 import os
 import tensorflow as tf
-import modeling
+from xlnet import modeling
 
 
 def _get_initializer(run_config):
