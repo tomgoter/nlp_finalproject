@@ -1,4 +1,4 @@
-# Extension of Unsupervised Data Augmentation to XLNet and Application to Game of Thrones Text Classification
+# Comparison of Unsupervised Data Augmentation with BERT and XLNet
 ## Final Project for W266: Natural Language Processing with Deep Learning
 ### Thomas Goter
 ### Fall 2019
