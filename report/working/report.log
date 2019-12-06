@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded format=pdflatex 2019.5.8)  30 NOV 2019 12:53
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded format=pdflatex 2019.5.8)  3 DEC 2019 20:14
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -378,7 +378,10 @@ Package: multirow 2019/01/01 v2.4 Span multiple rows of a table
 \multirow@dima=\skip66
 \bigstrutjot=\dimen164
 )
-(/usr/local/texlive/2019/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/local/texlive/2019/texmf-dist/tex/latex/threeparttable/threeparttable.sty
+Package: threeparttable 2003/06/13  v 3.0
+\@tempboxb=\box32
+) (/usr/local/texlive/2019/texmf-dist/tex/latex/graphics/graphicx.sty
 Package: graphicx 2017/06/01 v1.1a Enhanced LaTeX Graphics (DPC,SPQR)
 
 (/usr/local/texlive/2019/texmf-dist/tex/latex/graphics/graphics.sty
@@ -401,12 +404,12 @@ File: pdftex.def 2018/01/08 v1.0l Graphics/color driver for pdftex
 (/usr/local/texlive/2019/texmf-dist/tex/latex/tools/array.sty
 Package: array 2018/12/30 v2.4k Tabular extension package (FMi)
 \col@sep=\dimen167
-\ar@mcellbox=\box32
+\ar@mcellbox=\box33
 \extrarowheight=\dimen168
 \NC@list=\toks21
 \extratabsurround=\skip67
 \backup@length=\skip68
-\ar@cellbox=\box33
+\ar@cellbox=\box34
 )
 (/usr/local/texlive/2019/texmf-dist/tex/latex/ms/ragged2e.sty
 Package: ragged2e 2009/05/21 v2.1 ragged2e Package (MS)
@@ -428,30 +431,33 @@ Package: everysel 2011/10/28 v1.2 EverySelectfont Package (MS)
 \RaggedLeftParindent=\skip80
 \RaggedRightParindent=\skip81
 \JustifyingParindent=\skip82
-) (./report.aux)
+) (./report.aux
+
+LaTeX Warning: Label `tab:baseline' multiply defined.
+
+)
 \openout1 = `report.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 92.
-LaTeX Font Info:    ... okay on input line 92.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 92.
-LaTeX Font Info:    ... okay on input line 92.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 92.
-LaTeX Font Info:    ... okay on input line 92.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 92.
-LaTeX Font Info:    ... okay on input line 92.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 92.
-LaTeX Font Info:    ... okay on input line 92.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 92.
-LaTeX Font Info:    ... okay on input line 92.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 92.
-LaTeX Font Info:    ... okay on input line 92.
-LaTeX Font Info:    Try loading font information for T1+pplx on input line 92.
-
-(/usr/local/texlive/2019/texmf-dist/tex/latex/psnfss/t1pplx.fd
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 93.
+LaTeX Font Info:    ... okay on input line 93.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 93.
+LaTeX Font Info:    ... okay on input line 93.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 93.
+LaTeX Font Info:    ... okay on input line 93.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 93.
+LaTeX Font Info:    ... okay on input line 93.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 93.
+LaTeX Font Info:    ... okay on input line 93.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 93.
+LaTeX Font Info:    ... okay on input line 93.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 93.
+LaTeX Font Info:    ... okay on input line 93.
+LaTeX Font Info:    Try loading font information for T1+pplx on input line 93.
+ (/usr/local/texlive/2019/texmf-dist/tex/latex/psnfss/t1pplx.fd
 File: t1pplx.fd 2004/09/06 font definitions for T1/pplx.
 )
 \big@size=\dimen169
-LaTeX Info: Redefining \microtypecontext on input line 92.
+LaTeX Info: Redefining \microtypecontext on input line 93.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
@@ -502,10 +508,11 @@ File: mt-ppl.cfg 2005/11/16 v1.6 microtype config. file: Palatino (RS)
 
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: hyperref package is loaded.
+Package caption Info: threeparttable package is loaded.
 Package caption Info: wrapfig package is loaded.
 Package caption Info: End \AtBeginDocument code.
-\AtBeginShipoutBox=\box34
-Package hyperref Info: Link coloring OFF on input line 92.
+\AtBeginShipoutBox=\box35
+Package hyperref Info: Link coloring OFF on input line 93.
 (/usr/local/texlive/2019/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2016/05/21 v2.44 Cross-referencing by name of section
 
@@ -514,9 +521,9 @@ Package: gettitlestring 2016/05/16 v1.5 Cleanup title references (HO)
 )
 \c@section@level=\count138
 )
-LaTeX Info: Redefining \ref on input line 92.
-LaTeX Info: Redefining \pageref on input line 92.
-LaTeX Info: Redefining \nameref on input line 92.
+LaTeX Info: Redefining \ref on input line 93.
+LaTeX Info: Redefining \pageref on input line 93.
+LaTeX Info: Redefining \nameref on input line 93.
 
 (./report.out) (./report.out)
 \@outlinefile=\write3
@@ -527,7 +534,7 @@ LaTeX Info: Redefining \nameref on input line 92.
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count139
 \scratchdimen=\dimen170
-\scratchbox=\box35
+\scratchbox=\box36
 \nofMPsegments=\count140
 \nofMParguments=\count141
 \everyMPshowfont=\toks22
@@ -554,34 +561,34 @@ File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
 ABD: EverySelectfont initializing macros
-LaTeX Info: Redefining \selectfont on input line 92.
+LaTeX Info: Redefining \selectfont on input line 93.
 LaTeX Font Info:    Font shape `T1/pplx/bx/n' in size <14.4> not available
-(Font)              Font shape `T1/pplx/b/n' tried instead on input line 96.
-LaTeX Font Info:    Try loading font information for OT1+pplx on input line 96.
+(Font)              Font shape `T1/pplx/b/n' tried instead on input line 97.
+LaTeX Font Info:    Try loading font information for OT1+pplx on input line 97.
 
 
 (/usr/local/texlive/2019/texmf-dist/tex/latex/psnfss/ot1pplx.fd
 File: ot1pplx.fd 2004/09/06 font definitions for OT1/pplx.
 )
-LaTeX Font Info:    Try loading font information for OML+zplm on input line 96.
+LaTeX Font Info:    Try loading font information for OML+zplm on input line 97.
 
 
 (/usr/local/texlive/2019/texmf-dist/tex/latex/psnfss/omlzplm.fd
 File: omlzplm.fd 2002/09/08 Fontinst v1.914 font definitions for OML/zplm.
 )
-LaTeX Font Info:    Try loading font information for OMS+zplm on input line 96.
+LaTeX Font Info:    Try loading font information for OMS+zplm on input line 97.
 
 
 (/usr/local/texlive/2019/texmf-dist/tex/latex/psnfss/omszplm.fd
 File: omszplm.fd 2002/09/08 Fontinst v1.914 font definitions for OMS/zplm.
 )
-LaTeX Font Info:    Try loading font information for OMX+zplm on input line 96.
+LaTeX Font Info:    Try loading font information for OMX+zplm on input line 97.
 
 
 (/usr/local/texlive/2019/texmf-dist/tex/latex/psnfss/omxzplm.fd
 File: omxzplm.fd 2002/09/08 Fontinst v1.914 font definitions for OMX/zplm.
 )
-LaTeX Font Info:    Try loading font information for OT1+zplm on input line 96.
+LaTeX Font Info:    Try loading font information for OT1+zplm on input line 97.
 
 
 (/usr/local/texlive/2019/texmf-dist/tex/latex/psnfss/ot1zplm.fd
@@ -595,34 +602,34 @@ Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/pplx/m/sc/12'.
 (microtype)             Ignoring protrusion settings for this character.
 LaTeX Font Info:    Font shape `T1/pplx/bx/n' in size <10> not available
-(Font)              Font shape `T1/pplx/b/n' tried instead on input line 96.
+(Font)              Font shape `T1/pplx/b/n' tried instead on input line 97.
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/pplx/m/sc/10'.
 (microtype)             Ignoring protrusion settings for this character.
 Package lettrine.sty Info: Targeted height = 30.07506pt
 (lettrine.sty)             (no accent, loversize=0),
 (lettrine.sty)             Lettrine height = 30.07518pt (T);
-(lettrine.sty)             reported on input line 103.
+(lettrine.sty)             reported on input line 104.
 
-Underfull \hbox (badness 10000) in paragraph at lines 103--104
+Underfull \hbox (badness 10000) in paragraph at lines 104--105
 [][]\T1/pplx/m/n/10 (+20) e state-of-the-art in nat-u-ral lan-
  []
 
 
-Underfull \hbox (badness 1337) in paragraph at lines 103--104
+Underfull \hbox (badness 1337) in paragraph at lines 104--105
 \T1/pplx/m/n/10 (+20) im-proved, there is still a need in many
  []
 
-LaTeX Font Info:    Try loading font information for OMS+pplx on input line 107
+LaTeX Font Info:    Try loading font information for OMS+pplx on input line 108
 .
-LaTeX Font Info:    No file OMSpplx.fd. on input line 107.
+LaTeX Font Info:    No file OMSpplx.fd. on input line 108.
 
 LaTeX Font Warning: Font shape `OMS/pplx/m/n' undefined
 (Font)              using `OMS/cmsy/m/n' instead
-(Font)              for symbol `textbullet' on input line 107.
+(Font)              for symbol `textbullet' on input line 108.
 
 
-Underfull \hbox (badness 1184) in paragraph at lines 107--108
+Underfull \hbox (badness 1184) in paragraph at lines 108--109
 []\T1/pplx/m/n/10 (+20) Baseline clas-si-fi-ca-tion per-for-mance on
  []
 
@@ -631,44 +638,44 @@ Underfull \hbox (badness 1184) in paragraph at lines 107--108
 
 ]
 LaTeX Font Info:    Font shape `T1/pplx/bx/n' in size <9> not available
-(Font)              Font shape `T1/pplx/b/n' tried instead on input line 133.
+(Font)              Font shape `T1/pplx/b/n' tried instead on input line 134.
 
-Overfull \hbox (4.95546pt too wide) in paragraph at lines 137--137
+Overfull \hbox (4.95546pt too wide) in paragraph at lines 138--138
 []|\T1/pplx/m/n/10 (-20) Median
  []
 
 
-Overfull \hbox (2.28004pt too wide) in paragraph at lines 137--137
+Overfull \hbox (2.28004pt too wide) in paragraph at lines 138--138
 \T1/pplx/m/n/10 (-20) Length| 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 137--138
+Underfull \hbox (badness 10000) in paragraph at lines 138--139
 []|\T1/pplx/m/n/10 (+20) Length
  []
 
 
-Overfull \hbox (27.94057pt too wide) in paragraph at lines 135--148
+Overfull \hbox (27.94057pt too wide) in paragraph at lines 136--149
  [][] 
  []
 
 
-Overfull \hbox (4.17142pt too wide) in paragraph at lines 157--157
+Overfull \hbox (4.17142pt too wide) in paragraph at lines 158--158
  []|\T1/pplx/m/n/10 (-20) Dataset|
  []
 
 
-Overfull \hbox (7.98523pt too wide) in paragraph at lines 157--157
+Overfull \hbox (7.98523pt too wide) in paragraph at lines 158--158
  []|\T1/pplx/m/n/10 (-20) Training|
  []
 
 
-Overfull \hbox (1.40344pt too wide) in paragraph at lines 157--157
+Overfull \hbox (1.40344pt too wide) in paragraph at lines 158--158
  []|\T1/pplx/m/n/10 (-20) Development|
  []
 
 
-Overfull \hbox (13.73625pt too wide) in paragraph at lines 159--159
+Overfull \hbox (13.73625pt too wide) in paragraph at lines 160--160
  []|\T1/pplx/m/n/10 (-20) Examples|
  []
 
@@ -676,12 +683,12 @@ Overfull \hbox (13.73625pt too wide) in paragraph at lines 159--159
 Underfull \vbox (badness 1648) has occurred while \output is active []
 
 
-Underfull \hbox (badness 2478) in paragraph at lines 173--173
+Underfull \hbox (badness 2478) in paragraph at lines 174--174
  []|\T1/pplx/b/n/9 Model|
  []
 
 
-Underfull \hbox (badness 3758) in paragraph at lines 175--175
+Underfull \hbox (badness 3758) in paragraph at lines 176--176
  []|\T1/pplx/b/n/9 Raw|
  []
 
@@ -713,143 +720,312 @@ Overfull \hbox (12.86984pt too wide) in paragraph at lines 216--231
  [][] 
  []
 
-
-LaTeX Warning: Reference `(' on page 4 undefined on input line 236.
-
 [4]
-<baseline.png, id=126, 433.62pt x 289.08pt>
-File: baseline.png Graphic file (type png)
-<use baseline.png>
-Package pdftex.def Info: baseline.png  used on input line 239.
-(pdftex.def)             Requested size: 205.0023pt x 136.67041pt.
-
-Underfull \hbox (badness 1178) in paragraph at lines 251--251
+Underfull \hbox (badness 1178) in paragraph at lines 245--245
  []||
  []
 
 
-Overfull \hbox (2.52815pt too wide) in paragraph at lines 251--251
+Overfull \hbox (2.52815pt too wide) in paragraph at lines 245--245
 []|\T1/pplx/m/n/10 (-20) 2000| 
  []
 
 
-Overfull \hbox (2.52815pt too wide) in paragraph at lines 251--251
+Overfull \hbox (2.52815pt too wide) in paragraph at lines 245--245
 []|\T1/pplx/m/n/10 (-20) 5000| 
  []
 
 
-Overfull \hbox (4.58313pt too wide) in paragraph at lines 251--252
+Overfull \hbox (4.58313pt too wide) in paragraph at lines 245--246
 []|\T1/pplx/m/n/10 (-20) 12000| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 253--253
-[]|\T1/pplx/m/n/10 (-20) 0.747| 
+Overfull \hbox (5.42818pt too wide) in paragraph at lines 247--247
+[]|\T1/pplx/b/n/10 0.747| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 253--253
-[]|\T1/pplx/m/n/10 (-20) 0.622| 
+Overfull \hbox (5.42818pt too wide) in paragraph at lines 247--247
+[]|\T1/pplx/b/n/10 0.622| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 253--253
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 247--247
 []|\T1/pplx/m/n/10 (-20) 0.422| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 253--253
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 247--247
 []|\T1/pplx/m/n/10 (-20) 0.382| 
  []
 
 
-Overfull \hbox (2.13313pt too wide) in paragraph at lines 253--254
+Overfull \hbox (2.13313pt too wide) in paragraph at lines 247--248
 []|\T1/pplx/m/n/10 (-20) 0.322| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 254--254
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 248--248
 []|\T1/pplx/m/n/10 (-20) 0.770| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 254--254
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 248--248
 []|\T1/pplx/m/n/10 (-20) 0.723| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 254--254
-[]|\T1/pplx/m/n/10 (-20) 0.369| 
+Overfull \hbox (5.42818pt too wide) in paragraph at lines 248--248
+[]|\T1/pplx/b/n/10 0.369| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 254--254
-[]|\T1/pplx/m/n/10 (-20) 0.274| 
+Overfull \hbox (5.42818pt too wide) in paragraph at lines 248--248
+[]|\T1/pplx/b/n/10 0.274| 
  []
 
 
-Overfull \hbox (2.13313pt too wide) in paragraph at lines 254--255
-[]|\T1/pplx/m/n/10 (-20) 0.242| 
+Overfull \hbox (2.58316pt too wide) in paragraph at lines 248--249
+[]|\T1/pplx/b/n/10 0.242| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 255--255
-[]|\T1/pplx/m/n/10 (-20) 0.747| 
+Overfull \hbox (5.42818pt too wide) in paragraph at lines 249--249
+[]|\T1/pplx/b/n/10 0.747| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 255--255
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 249--249
 []|\T1/pplx/m/n/10 (-20) 0.667| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 255--255
-[]|\T1/pplx/m/n/10 (-20) 0.422| 
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 249--249
+[]|\T1/pplx/m/n/10 (-20) 0.375| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 255--255
-[]|\T1/pplx/m/n/10 (-20) 0.382| 
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 249--249
+[]|\T1/pplx/m/n/10 (-20) 0.307| 
  []
 
 
-Overfull \hbox (2.13313pt too wide) in paragraph at lines 255--256
-[]|\T1/pplx/m/n/10 (-20) 0.322| 
+Overfull \hbox (2.13313pt too wide) in paragraph at lines 249--250
+[]|\T1/pplx/m/n/10 (-20) 0.278| 
  []
 
 
-Overfull \hbox (0.72641pt too wide) in paragraph at lines 247--258
+Overfull \hbox (0.72641pt too wide) in paragraph at lines 241--252
  [][] 
  []
 
 
-Underfull \hbox (badness 1259) in paragraph at lines 284--287
+Underfull \vbox (badness 3229) has occurred while \output is active []
+
+<baseline.png, id=132, 433.62pt x 289.08pt>
+File: baseline.png Graphic file (type png)
+<use baseline.png>
+Package pdftex.def Info: baseline.png  used on input line 257.
+(pdftex.def)             Requested size: 205.0023pt x 136.67041pt.
+
+
+LaTeX Warning: Reference `tab:uda' on page 5 undefined on input line 262.
+
+
+Underfull \vbox (badness 3724) has occurred while \output is active []
+
+ [5 <./baseline.png>]
+Underfull \hbox (badness 1675) in paragraph at lines 298--298
+ []||
+ []
+
+
+Overfull \hbox (2.52815pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/m/n/10 (-20) 2000| 
+ []
+
+
+Overfull \hbox (4.58313pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/m/n/10 (-20) 12000| 
+ []
+
+
+Overfull \hbox (5.42818pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/b/n/10 0.622| 
+ []
+
+
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/m/n/10 (-20) 0.422| 
+ []
+
+
+Overfull \hbox (2.13313pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/m/n/10 (-20) 0.322| 
+ []
+
+
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/m/n/10 (-20) 0.723| 
+ []
+
+
+Overfull \hbox (5.42818pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/b/n/10 0.369| 
+ []
+
+
+Overfull \hbox (2.58316pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/b/n/10 0.242| 
+ []
+
+
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/m/n/10 (-20) 0.667| 
+ []
+
+
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/m/n/10 (-20) 0.375| 
+ []
+
+
+Overfull \hbox (2.13313pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/m/n/10 (-20) 0.278| 
+ []
+
+
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/m/n/10 (-20) 0.676| 
+ []
+
+
+Overfull \hbox (5.42818pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/b/n/10 0.335| 
+ []
+
+
+Overfull \hbox (2.58316pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/b/n/10 0.205| 
+ []
+
+
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/m/n/10 (-20) 0.723| 
+ []
+
+
+Overfull \hbox (5.42818pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/b/n/10 0.369| 
+ []
+
+
+Overfull \hbox (2.58316pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/b/n/10 0.242| 
+ []
+
+
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/m/n/10 (-20) 0.047| 
+ []
+
+
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/m/n/10 (-20) 0.034| 
+ []
+
+
+Overfull \hbox (2.13313pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/m/n/10 (-20) 0.037| 
+ []
+
+
+Overfull \hbox (3.41016pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/m/n/10 (-20) 6.5%| 
+ []
+
+
+Overfull \hbox (3.41016pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/m/n/10 (-20) 9.2%| 
+ []
+
+
+Overfull \hbox (5.46513pt too wide) in paragraph at lines 298--298
+[]|\T1/pplx/m/n/10 (-20) 15.3%| 
+ []
+
+<cm_bert.png, id=143, 702.625pt x 290.08376pt>
+File: cm_bert.png Graphic file (type png)
+<use cm_bert.png>
+Package pdftex.def Info: cm_bert.png  used on input line 309.
+(pdftex.def)             Requested size: 205.0023pt x 84.63557pt.
+
+Overfull \hbox (2.29475pt too wide) in paragraph at lines 326--326
+ []|\T1/pplx/m/n/10 (-20) Training
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 326--326
+[]|\T1/pplx/m/n/10 (+20) Batch
+ []
+
+
+Overfull \hbox (8.60898pt too wide) in paragraph at lines 326--326
+[]|\T1/pplx/m/n/10 (-20) Dropout
+ []
+
+
+Overfull \hbox (10.87805pt too wide) in paragraph at lines 326--326
+[]|\T1/pplx/m/n/10 (-20) Learning
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 326--327
+[]|\T1/pplx/m/n/10 (+20) Dev.
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 326--327
+\T1/pplx/m/n/10 (+20) Er-ror
+ []
+
+
+Overfull \hbox (2.95189pt too wide) in paragraph at lines 324--335
+ [][] 
+ []
+
+<tfidf.png, id=145, 433.62pt x 289.08pt>
+File: tfidf.png Graphic file (type png)
+<use tfidf.png>
+Package pdftex.def Info: tfidf.png  used on input line 338.
+(pdftex.def)             Requested size: 205.0023pt x 136.67041pt.
+[6 <./cm_bert.png> <./tfidf.png>]
+Underfull \hbox (badness 1259) in paragraph at lines 365--368
 \T1/pplx/m/n/10 (+20) Minh-Thang Lu-ong and Quoc V. Le.
  []
 
-[5 <./baseline.png>]
-Underfull \hbox (badness 1092) in paragraph at lines 299--302
+
+Underfull \hbox (badness 1092) in paragraph at lines 380--383
 []\T1/pplx/m/n/10 (+20) Jacob De-vlin, Ming-Wei Chang, Ken-
  []
 
 
-Underfull \hbox (badness 1810) in paragraph at lines 304--307
+Underfull \hbox (badness 1810) in paragraph at lines 385--388
 \T1/pplx/m/n/10 (+20) (2012).  Japanese and Ko-rean Voice
  []
 
 
-Underfull \hbox (badness 3375) in paragraph at lines 316--319
+Underfull \hbox (badness 3375) in paragraph at lines 397--400
 []\T1/pplx/m/n/10 (+20) Rico Sen-nrich, Barry Had-dow, and
  []
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 329.
-[6
-
-]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 329.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 410.
+[7]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 410.
  (./report.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 329.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 329.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 410.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 410.
 Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: 0B45ED04CC10E239F53B82BEBD5150DC;714.
 
@@ -859,16 +1035,19 @@ LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
 LaTeX Warning: There were undefined references.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 329.
+
+LaTeX Warning: There were multiply-defined labels.
+
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 410.
  ) 
 Here is how much of TeX's memory you used:
- 11014 strings out of 492616
- 168421 string characters out of 6129482
- 313397 words of memory out of 5000000
- 14375 multiletter control sequences out of 15000+600000
- 85469 words of font info for 339 fonts, out of 8000000 for 9000
+ 11106 strings out of 492616
+ 169744 string characters out of 6129482
+ 315772 words of memory out of 5000000
+ 14436 multiletter control sequences out of 15000+600000
+ 86433 words of font info for 353 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 36i,17n,43p,1395b,454s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 36i,17n,45p,1395b,448s stack positions out of 5000i,500n,10000p,200000b,80000s
 pdfTeX warning (dest): name{Hfootnote.3} has been referenced but does not exi
 st, replaced by a fixed one
 
@@ -879,10 +1058,10 @@ e/2019/texmf-dist/fonts/type1/public/fpl/fplrc8a.pfb></usr/local/texlive/2019/t
 exmf-dist/fonts/type1/urw/palatino/uplb8a.pfb></usr/local/texlive/2019/texmf-di
 st/fonts/type1/urw/palatino/uplr8a.pfb></usr/local/texlive/2019/texmf-dist/font
 s/type1/urw/palatino/uplri8a.pfb>
-Output written on report.pdf (6 pages, 138340 bytes).
+Output written on report.pdf (7 pages, 612734 bytes).
 PDF statistics:
- 184 PDF objects out of 1000 (max. 8388607)
- 166 compressed objects within 2 object streams
- 39 named destinations out of 1000 (max. 500000)
- 66150 words of extra memory for PDF output out of 74296 (max. 10000000)
+ 217 PDF objects out of 1000 (max. 8388607)
+ 194 compressed objects within 2 object streams
+ 47 named destinations out of 1000 (max. 500000)
+ 66160 words of extra memory for PDF output out of 74296 (max. 10000000)
 

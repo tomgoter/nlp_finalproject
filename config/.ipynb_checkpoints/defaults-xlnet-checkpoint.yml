@@ -29,6 +29,7 @@ unsup_data_dir: False
 
 # TPUs and machines
 use_tpu: False 
+use_one_hot_embeddings: False 
 num_hosts: 1 # How many TPU hosts.
 num_core_per_host: 1
 tpu_job_name: False #TPU worker job name.

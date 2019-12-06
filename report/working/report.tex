@@ -62,6 +62,7 @@
 
 \usepackage{wrapfig} % 
 \usepackage{multirow} % 
+\usepackage{threeparttable}
 \usepackage{graphicx}
 \usepackage{array,booktabs,ragged2e}
 \newcolumntype{R}[1]{>{\RaggedLeft\arraybackslash}p{#1}}
@@ -189,22 +190,21 @@ The baseline model chosen for this multi-class text classification task was a si
 
 \subsubsection{Finetuned BERT Model}
 
-The finetuning of a BERT model for text classification is a relatively straightforward task in which existing model parameters are the learned embedding for the special [CLS] token is fed to an output layer softmax. The finetuning begins with using learned model parameters from an existing model [4], and weights from all layers are adjusted during the finetuning process. For the sake of this task, the BERT-base, uncased model (12-layer, 768 hidden layer dimension, 12 attention heads and 110M model parameters) has been used as the starting point. The learning rate should be to avoid "catastrophic forgetting" of the pretrained weights by keeping the learning rate relatively small, but it is treated as a hyperparameter (along with attention and hidden layer dropout rates) during the finetuning process.
+The finetuning of a BERT model for text classification is a relatively straightforward task in which existing model parameters are the learned embedding for the special [CLS] token is fed to an output layer softmax. The finetuning begins with using learned model parameters from an existing model [4], and weights from all layers are adjusted during the finetuning process. For the sake of this task, the BERT-base, uncased model (12-layer, 768 hidden layer dimension, 12 attention heads and 110M model parameters) has been used as the starting point. The learning rate should be set to avoid "catastrophic forgetting" of the pretrained weights by keeping the learning rate relatively small, but it is treated as a hyperparameter (along with attention and hidden layer dropout rates) during the finetuning process.
 
 The BERT model uses a special tokenization that includes WordPiece tokenization \cite{Schuster and Nakajima:2012} which breaks words down into smaller pieces and uses special \# tokens to indicate when this word trimming occurs. This helps both with identifying similar root words, but also helps to accomodate out-of-vocabulary words. Table~\ref{tab:tokens} compares an example sequence along with its BERT and XLNet tokenization. Code for the BERT model was leveraged from that used for the original UDA paper [1]; however, it was updated to be compatible with the Google Colaboratory environment (notebook-based), Tensorflow 1.15.0 and Python 3.  
-
 
 \subsubsection{Finetuned XLNet Model}
 Using XLNet for text classification is quite similar to that for BERT. At the time of this analysis, only the cased XLNet models are available for download. This model has ~117M parameters and is built on the TransformerXL model architecture \cite{Dai:2019}. As discussed in \cite{Yang:2019}, the XLNet model uses an autoregressive method estimate a probability distribution of a word given not just its forward or backward context, but with respect to all possible permutations of context for a given sequence. This approach was shown to outperform BERT specifically for text classification making it a naturally desirable model to apply to the classification task discussed herein. As with BERT, finetuning is performed by making small adjustments to the pretrained weights for all layers.
 
- The XLNET model is distributed with an existing SentencePiece model (as BERT is distributed with a vocabulary) which is used for tokenization of sequences. Resultant tokenization differences are shown in Table~\ref{tab:tokens}. These differences are the explict (XLNet) versus implict (BERT) treatment of whitespace, the casing, how out-of-vocabulary words get broken down into wordpieces (e.g., p \#\#yl \#\#os and \_Py los for the name "Pylos"), and ordering of special tokens in the sequence. Finetuning of model weights and hyperparameter tuning (i.e., learning rates, dropout, steps, et cetera) is all achieved with evaluation on the development set only. 
+ The XLNET model is distributed with an existing SentencePiece model (as BERT is distributed with a vocabulary) which is used for tokenization of sequences. Resultant tokenization differences are shown in Table~\ref{tab:tokens}. These differences are the explict (XLNet) versus implict (BERT) treatment of whitespace, the casing, how out-of-vocabulary words get broken down into wordpieces (e.g., p \#\#yl \#\#os and \_Py los for the name "Pylos"), and ordering of special tokens in the sequence. Finetuning of model weights and hyperparameter tuning (i.e., learning rates, dropout, steps, et cetera) is all achieved with evaluation on the development set. 
  
 \subsubsection{Unsupervised Data Augmentation}
-The goal of this work was to compare the UDA methodology from \cite{Xie:2019} when coupled with BERT and XLNet models for this {\it Game of Thrones} text classification problem. As such the UDA methodology kept consistent with that discussed in detail in \cite{Xie:2019}. This is a semi-supervised, consistency training method in which both labeled and unlabeled data is leveraged. In this process a training batch consists of three parts 1) labeled non-augmented examples $E_{L}$, 2) unlabeled, non-augmented examples $E_{U}$, and 3) matching unlabeled, augmented examples $E^{\prime}_{U}$. Standard cross-entropy loss is used on $E_{L}$; however, to this loss term is added the Kullback-Leibler divergence ($D_{KL}$), or relative entropy, between the unlabeled pairs of augmented and non-augmented examples (hence the term consistency training) as shown in Equation \ref{eq:loss}\footnote{Note that the UDA methodology also has tuning parameters such as softmax temperature and confidence threshold masking for the probabilities in the $D_{KL}$ term}. The challenge is performing data augmentation of the unlabeled examples while preserving the expected class label.
+The goal of the work discussed herein was to compare the UDA methodology from \cite{Xie:2019} when coupled with BERT and XLNet models for this {\it Game of Thrones} text classification problem. As such the UDA methodology was kept consistent with that discussed in detail in \cite{Xie:2019}. This is a semi-supervised, consistency training method in which both labeled and unlabeled data is leveraged. In this process a training batch consists of three parts 1) labeled non-augmented examples $E_{L}$, 2) unlabeled, non-augmented examples $E_{U}$, and 3) matching unlabeled, augmented examples $E^{\prime}_{U}$. Standard cross-entropy loss is used on $E_{L}$; however, to this loss term is added the Kullback-Leibler divergence ($D_{KL}$), or relative entropy, between the unlabeled pairs of augmented and non-augmented examples (hence the term consistency training) as shown in Equation \ref{eq:loss}\footnote{Note that the UDA methodology also has tuning parameters such as softmax temperature and confidence threshold masking for the probabilities in the $D_{KL}$ term}. The challenge is performing data augmentation of the unlabeled examples while preserving the expected class label.
 
  \begin{equation}
  \label{eq:loss}
- H = -log(q(E_{L})) + -log\frac{q(E_{U})}{q(E^{\prime}_{U})}
+ Loss_{Total} = -log(q(E_{L})) + -log\frac{q(E_{U})}{q(E^{\prime}_{U})}
  \end{equation}
 
 Two methods for performing this augmentation are discussed in \cite{Xie:2019}, forward-backward translation and TF-IDF word replacement. For the purposes of this analysis only the TF-IDF word replacement augmentation strategy was used. However, in Section \ref{future}, additional text augmentation methods are considered. The TF-IDF word replacement strategy was chosen because it was judged that people and locations would be essentially keywords that would be useful for the book classification task, and this strategy would preserve those. This data augmentation strategy works by generating a TF-IDF score for each word in a given sequence (prior to tokenization). A probability factor is then used to tune the likelihood of each word being replaced, with words having lower TF-IDF scores (relative to the maximum occuring in the sequence) being more likely to be replaced (See Appendix B to \cite{Xie:2019} for more details).  The entire set of  15,001 available training examples is augmented and made available for using during the UDA training process. From the augmented examples provided in Table~\ref{tab:augdata}, it can clearly be seen that expected keywords with high TF-IDF values such as the names \textbf{Edd} and \textbf{Sansa} are preserved while things with expected low TF-IDF values, such as punctuation is more likely to be replaced.  
@@ -233,7 +233,25 @@ Two methods for performing this augmentation are discussed in \cite{Xie:2019}, f
 %------------------------------------------------
 
 \section{Analysis Results} \label{results}
-Given that this the dataset used for the studies discussed herein is novel, baseline accuracy scores were generated and are provided as Figure~\ref{fig:baseline}.   As discussed in Section \ref{methods}, the baseline accuracies were generated using a Naive-Bayes approach on the tokenized sequences.  During the baseline model evaluation, the simple CountVectorizer model using bigrams showed superior performance as evaluated on the development set and was thusly used for the final evaluations. Figure~\ref{fig:baseline} clearly shows the expected behavior between accuracy and training set size and motivates the exploration of UDA as a potential means for increasing accuracy when only limited labeled data is available.  Error rates are explicitly given in Table~\ref(tab:baseline)
+Given that the dataset used for the studies discussed herein is novel, baseline accuracy scores were generated and are provided as Figure~\ref{fig:baseline}.   As discussed in Section \ref{methods}, the baseline accuracies were generated using a Naive-Bayes approach on the tokenized sequences.  During the baseline model evaluation, the simple CountVectorizer model using bigrams showed superior performance as evaluated on the development set and was thusly used for the final evaluations. Figure~\ref{fig:baseline} clearly shows the expected behavior between accuracy and training set size and motivates the exploration of UDA as a potential means for increasing accuracy when only limited labeled data is available.  Error rates are explicitly given in Table~\ref{tab:baseline}. 
+
+\begin{table}
+	\caption{Classification Error Rates}\label{tab:baseline}
+	\centering
+	\begin{tabular}{R{1.6cm}p{0.6cm}p{0.6cm}p{0.6cm}p{0.6cm}p{0.7cm}}
+		\toprule
+		\multirow{2}{*}\textbf{Model} & \multicolumn{5}{c}{Training Set Size} \\
+		\cline{2-6}
+		& 20 & 200 & 2000 & 5000 & 12000 \\
+		\midrule
+		\textbf{Baseline} & \textbf{0.747} & \textbf{0.622} & 0.422 & 0.382 & 0.322 \\
+		\textbf{BERT FT} & 0.770 & 0.723 & \textbf{0.369} & \textbf{0.274} & \textbf{0.242} \\
+		\textbf{XLNet FT} & \textbf{0.747 }& 0.667 & 0.375 & 0.307 & 0.278 \\
+		\bottomrule
+	\end{tabular}
+\end{table} 
+
+Finetuned model accuracies are also presented in Table~\ref{tab:baseline}, one can see the clear benefit of the more advanced models, but only with sufficient training data (i.e., $\geq 2000$). With fewer data, the baseline actually outperforms the BERT and XLNet models with training set sizes less than 2000. Above this level the BERT model is actually highest performing, which was a somewhat surprising result given that XLNet models have been shown to result in state-of-the-art accuracies for text classification \cite{Yang:2019}. It should be noted, however, that the XLNet to BERT multi-class text classification comparison provided in \cite{Yang:2019} was done with only the large models (i.e., with twice as many attention layers).  It is unclear whether the base models showed the same trends as the large models.  In general, the results met with expectation. With the largest training set size, the multi-class error rate approaches 24\%. For the Amazon-5 and Yelp-5 text classification sets, finetuned BERT \cite{Vaswani:2017} and XLNet \cite{Yang:2019} models, 28 and 35\% by comparison.
 
 \begin{figure}
 	\includegraphics[width=\linewidth]{baseline.png}
@@ -241,32 +259,95 @@ Given that this the dataset used for the studies discussed herein is novel, base
 	\label{fig:baseline}
 \end{figure}
 
+Error rates from the finetuned and optimized semi-supervised models are also presented in Table~\ref{tab:uda} along with relative and absolute change in the error rate with respect to the finetuned models with the same labeled dataset size.
+
 \begin{table}
-	\caption{Classification Error Rates}\label{tab:baseline}
+	\resizebox{\columnwidth}{!}{%
+	\begin{threeparttable}
+	\caption{Classification Error Rates with UDA}\label{tab:baseline}
 	\centering
-	\begin{tabular}{R{1.6cm}p{0.6cm}p{0.6cm}p{0.6cm}p{0.6cm}p{0.7cm}}
-	\toprule
-	\multirow{2}{*}\textbf{Model} & \multicolumn{5}{c}{Training Set Size} \\
-	\cline{2-6}
-	  & 20 & 200 & 2000 & 5000 & 12000 \\
-	\midrule
-	\textbf{Baseline} & 0.747 & 0.622 & 0.422 & 0.382 & 0.322 \\
-	\textbf{BERT FT} & 0.770 & 0.723 & 0.369 & 0.274 & 0.242 \\
-	\textbf{XLNet FT} & 0.747 & 0.667 & 0.422 & 0.382 & 0.322 \\
-	\bottomrule
-	\end{tabular}
+		\begin{tabular}{R{1.8cm}p{1.0cm}p{0.6cm}p{0.6cm}p{1.0cm}p{0.7cm}}
+			\toprule
+			\multirow{2}{*}\textbf{Model} & \multicolumn{5}{c}{Training Set Size} \\
+			\cline{2-6}
+			& 20 & 200 & 2000 & 5000 & 12000 \\
+			\midrule
+			\small
+			\textbf{Baseline} & \textbf{0.747} & \textbf{0.622} & 0.422 & 0.382 & 0.322 \\
+			\small
+			\textbf{BERT FT} & 0.770 & 0.723 & \textbf{0.369} & \textbf{0.274} & \textbf{0.242} \\
+			\small
+			\textbf{XLNet FT} & \textbf{0.747 }& 0.667 & 0.375 & 0.307 & 0.278 \\
+			\bottomrule
+			\small
+			\textbf{BERT UDA} & 0.776 & 0.676 & \textbf{0.335} & \textbf{0.291} & \textbf{0.205} \\
+			\small
+			\textbf{XLNet UDA} & 0.770 & 0.723 & \textbf{0.369} & \textbf{0.274} & \textbf{0.242} \\
+			\midrule
+			\small
+			\textbf{ACE} & -0.006 & 0.047 & 0.034 & -0.017 & 0.037 \\
+			\small
+			\textbf{RCE} & -0.8\% & 6.5\% & 9.2\% & -3.0\% & 15.3\% \\
+			\bottomrule
+		\end{tabular}
+		\begin{tablenotes}
+			\small
+			\item ACE = Absolute Change in Error
+			\item RCE = Relative Change in Error
+		\end{tablenotes}
+	\end{threeparttable}}
 \end{table} 
+
+
+
+Investigation of the BERT model errors for the training set size of 200 indicated that even though the training sets were balanced, nearly none of the test set examples were being predicted to come from the second novel, \textit{Clash of Kings}. However, as additional training data class prediction becomes much more balanced, with no single class standing out as particularly troublesome as shown in Figure~\ref{fig:cmbert}.
+
+
+
+
+\begin{figure}
+	\includegraphics[width=\linewidth]{cm_bert.png}
+	\caption{BERT Finetune Confusion Matrices}
+	\label{fig:cmbert}
+\end{figure}
+
+
 
 %------------------------------------------------
 
 \section{Experiments} \label{experiments}
+Several experiments aimed at understanding performance tradeoffs with hyperparameters in both the finetuned and UDA models were executed. For finetuning, these studies were focused primarily on batch size, hidden layer dropout rate and learning rate, and all experiments were only evaluated relative to the development set. While other parameters were also studied, these three provided the largest performance changes. An example suite of these senstivities, performed for the XLNet finetuned model are shown in Table~\ref{tab:xlnetft}.
+
+\begin{table}
+	\caption{Select XLNet Finetuning Experiments}\label{tab:xlnetft}
+	\centering
+	\begin{tabular}{R{1.2cm}p{1.0cm}p{1.0cm}p{1.0cm}p{1.0cm}}
+		\toprule
+		Training Set Size & Batch Size & Dropout Rate & Learning Rate & Dev. Error Rate\\
+		\midrule
+		\textbf{12000} & 32 & 0.10 &3E-5 & 0.250 \\
+		\textbf{12000} & 32 & \textbf{0.15} &3E-5 & 0.303 \\
+		\textbf{12000} & 32 & \textbf{0.20} &3E-5 & 0.353 \\
+		\textbf{12000} & \textbf{16} & \textbf{0.15} &3E-5 & 0.389 \\
+		\textbf{12000} & 16 & 0.15 &\textbf{5E-5} & 0.377 \\
+		\bottomrule
+	\end{tabular}
+\end{table} 
+
+\begin{figure}
+	\includegraphics[width=\linewidth]{tfidf.png}
+	\caption{TF-IDF Replacement Probability Experiments}
+	\label{fig:tfidf}
+\end{figure}
+
+For the semi-supervised portion of this analysis a suite of sensitivity evaluations were run for each training set size to optimize the hyperparameters. In addition to those available during finetuning, the UDA process also includes several additional hyperparameters which can make time consuming. Although initial studies were performed following the guidance provided in \cite{Xie:2019}, it was determined that this tuning was quite problem specific. For example, the TF-IDF replacement probability most commonly used in the \cite{Xie:2019} study was stated to be 0.7; however, the studies presented herein optimized at lower replacement probabilities for both BERT and XLNet models, as shown in Figure~\ref{fig:tfidf}\footnote{All other hyperparameters held constant.}.  Further no benefit was observed from either confidence masking or by decreasing softmax temperature (i.e., accentuating probability differences) on the unsuperivsed data.
 
 
 
 %------------------------------------------------
 
 \section{Future Work} \label{future}
-The work presented herein only looked at a single data augmentation technique during the UDA application. Future work should evaluate whether the back-translation augmentation methodology applied in \cite{Xie:2019} provides improved performance over the TF-IDF augmentation. Recent work by Sun, et al., \cite{Sun:2019}
+The work presented herein only looked at a single data augmentation technique during the UDA application. Future work should evaluate whether the back-translation augmentation methodology applied in \cite{Xie:2019} provides improved performance over the TF-IDF augmentation. Additionally recent work by Sun, et al., \cite{Sun:2019} provides exciting new methods for back-translation by generating a distinct translation from each head in a multi-attention head transformer network. The effectiveness of using different TSA schedules for different amounts of training data, seen in \cite{Xie:2019}, was reproduced by this work. Given that these are relatively simple models for how labeled data is introduced during the UDA process, additional work to understand and optimize these schedules should be pursued. In addition to furthering the UDA methodology, further work that looks at both BERT and XLNet models should further simplify the modeling. While either model can be run from the Colaboratory notebook and some elimination of redundant methods was implemented \footnote{ \href{https://github.com/tomgoter/nlp_finalproject}{Project GitHub repository}}, there is still significant streamlining that can be done to enhance simplicity and flexibility for future users of this process.
 
 
 \section{Conclusions} \label{conclusions}
@@ -278,7 +359,7 @@ The work presented herein only looked at a single data augmentation technique du
 %	REFERENCE LIST
 %----------------------------------------------------------------------------------------
 
-\begin{thebibliography}{99} % Bibliography - this is intentionally simple in this template
+\begin{thebibliography}{99} % Bibliography 
 
 \bibitem[1] {Xie:2019}
 Qizh Xie, Zihang Dai, Eduard Hovy, Minh-Thang Luong and Quoc V. Le. (2019).
