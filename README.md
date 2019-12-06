@@ -16,7 +16,7 @@ The Unsupervised Data Augmentation (UDA) methodology presented in https://arxiv.
  
  - Pretrained models and Data is warehoused in personal Google Drive and Google Bucket for running with GPUs and TPUs through Google's colaboratory environment. 
  
- - The final run script is set up to run on either GPUs or TPUs and can run either XLNet or BERT models. There are default options provided for each. And all options can be overwritten in the notebook. 
+ - The final run script (bert_xlnet_uda_colab.ipynb) is set up to run on either GPUs or TPUs and can run either XLNet or BERT models. There are default options provided for each. And all options can be overwritten in the notebook. 
  
  - Typical model runtimes range between 30-60 minutes on an 8-core TPU. 
 
