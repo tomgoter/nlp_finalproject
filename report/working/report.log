@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded format=pdflatex 2019.5.8)  6 DEC 2019 13:23
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded format=pdflatex 2019.5.8)  7 DEC 2019 12:49
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -630,11 +630,13 @@ Underfull \hbox (badness 1184) in paragraph at lines 109--110
 []\T1/pplx/m/n/10 (+20) Baseline clas-si-fi-ca-tion per-for-mance on
  []
 
-[1{/usr/local/texlive/2019/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
+
+Underfull \vbox (badness 1831) has occurred while \output is active []
+
+ [1{/usr/local/texlive/2019/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
 
 
-]
-[2]
+] [2]
 LaTeX Font Info:    Font shape `T1/pplx/bx/n' in size <9> not available
 (Font)              Font shape `T1/pplx/b/n' tried instead on input line 144.
 
@@ -678,216 +680,189 @@ Overfull \hbox (4.74678pt too wide) in paragraph at lines 154--154
  []
 
 
-Overfull \hbox (2.29475pt too wide) in paragraph at lines 154--154
-[]|\T1/pplx/m/n/10 (-20) Training
+Overfull \hbox (4.74678pt too wide) in paragraph at lines 154--154
+[]|\T1/pplx/b/n/10 Training
  []
 
-
-Overfull \hbox (2.27193pt too wide) in paragraph at lines 163--163
-[]|\T1/pplx/b/n/9 Replacement
- []
-
-
-Overfull \hbox (3.71634pt too wide) in paragraph at lines 167--167
- []|\T1/pplx/m/n/9 (-20) Augmented|
- []
-
-
-Overfull \hbox (3.71634pt too wide) in paragraph at lines 170--170
- []|\T1/pplx/m/n/9 (-20) Augmented|
- []
-
-
-Overfull \hbox (3.71634pt too wide) in paragraph at lines 173--173
- []|\T1/pplx/m/n/9 (-20) Augmented|
- []
-
-
-Overfull \hbox (12.86984pt too wide) in paragraph at lines 161--176
- [][] 
- []
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [3]
-<baseline.png, id=106, 433.62pt x 289.08pt>
+[3]
+<baseline.png, id=109, 433.62pt x 289.08pt>
 File: baseline.png Graphic file (type png)
 <use baseline.png>
-Package pdftex.def Info: baseline.png  used on input line 195.
+Package pdftex.def Info: baseline.png  used on input line 176.
 (pdftex.def)             Requested size: 205.0023pt x 136.67041pt.
-
-Underfull \vbox (badness 3724) has occurred while \output is active []
-
- [4 <./baseline.png>]
-<uda_errors.png, id=121, 433.62pt x 289.08pt>
+<uda_errors.png, id=116, 433.62pt x 289.08pt>
 File: uda_errors.png Graphic file (type png)
 <use uda_errors.png>
-Package pdftex.def Info: uda_errors.png  used on input line 203.
+Package pdftex.def Info: uda_errors.png  used on input line 184.
 (pdftex.def)             Requested size: 205.0023pt x 136.67041pt.
+ [4 <./baseline.png> <./uda_errors.png>]
+<combo.png, id=131, 433.1382pt x 415.3116pt>
+File: combo.png Graphic file (type png)
+<use combo.png>
+Package pdftex.def Info: combo.png  used on input line 192.
+(pdftex.def)             Requested size: 205.0023pt x 196.56529pt.
 
-Underfull \hbox (badness 1675) in paragraph at lines 255--255
+Underfull \hbox (badness 1675) in paragraph at lines 237--237
  []||
  []
 
 
-Overfull \hbox (2.52815pt too wide) in paragraph at lines 255--255
+Overfull \hbox (2.52815pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 2000| 
  []
 
 
-Overfull \hbox (4.58313pt too wide) in paragraph at lines 255--255
+Overfull \hbox (4.58313pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 12000| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 255--255
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 0.422| 
  []
 
 
-Overfull \hbox (2.13313pt too wide) in paragraph at lines 255--255
+Overfull \hbox (2.13313pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 0.322| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 255--255
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 0.369| 
  []
 
 
-Overfull \hbox (2.13313pt too wide) in paragraph at lines 255--255
+Overfull \hbox (2.13313pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 0.242| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 255--255
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 0.375| 
  []
 
 
-Overfull \hbox (2.13313pt too wide) in paragraph at lines 255--255
+Overfull \hbox (2.13313pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 0.278| 
  []
 
 
-Overfull \hbox (5.42818pt too wide) in paragraph at lines 255--255
+Overfull \hbox (5.42818pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/b/n/10 0.319| 
  []
 
 
-Overfull \hbox (2.58316pt too wide) in paragraph at lines 255--255
+Overfull \hbox (2.58316pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/b/n/10 0.207| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 255--255
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 0.324| 
  []
 
 
-Overfull \hbox (2.13313pt too wide) in paragraph at lines 255--255
+Overfull \hbox (2.13313pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 0.256| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 255--255
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 0.045| 
  []
 
 
-Overfull \hbox (2.13313pt too wide) in paragraph at lines 255--255
+Overfull \hbox (2.13313pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 0.035| 
  []
 
 
-Overfull \hbox (8.31015pt too wide) in paragraph at lines 255--255
+Overfull \hbox (8.31015pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 12.2%| 
  []
 
 
-Overfull \hbox (5.46513pt too wide) in paragraph at lines 255--255
+Overfull \hbox (5.46513pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 14.5%| 
  []
 
 
-Overfull \hbox (4.97815pt too wide) in paragraph at lines 255--255
+Overfull \hbox (4.97815pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 0.051| 
  []
 
 
-Overfull \hbox (2.13313pt too wide) in paragraph at lines 255--255
+Overfull \hbox (2.13313pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 0.022| 
  []
 
 
-Overfull \hbox (8.31015pt too wide) in paragraph at lines 255--255
+Overfull \hbox (8.31015pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 13.6%| 
  []
 
 
-Overfull \hbox (0.56514pt too wide) in paragraph at lines 255--255
+Overfull \hbox (0.56514pt too wide) in paragraph at lines 237--237
 []|\T1/pplx/m/n/10 (-20) 7.9%| 
  []
 
-[5 <./uda_errors.png>]
-Overfull \hbox (2.29475pt too wide) in paragraph at lines 277--277
+[5 <./combo.png>]
+Overfull \hbox (2.29475pt too wide) in paragraph at lines 259--259
  []|\T1/pplx/m/n/10 (-20) Training
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 277--277
+Underfull \hbox (badness 10000) in paragraph at lines 259--259
 []|\T1/pplx/m/n/10 (+20) Batch
  []
 
 
-Overfull \hbox (2.9185pt too wide) in paragraph at lines 277--277
+Overfull \hbox (2.9185pt too wide) in paragraph at lines 259--259
 []|\T1/pplx/m/n/10 (-20) Dropout
  []
 
 
-Overfull \hbox (5.18758pt too wide) in paragraph at lines 277--277
+Overfull \hbox (5.18758pt too wide) in paragraph at lines 259--259
 []|\T1/pplx/m/n/10 (-20) Learning
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 277--277
+Underfull \hbox (badness 10000) in paragraph at lines 259--259
 []|\T1/pplx/m/n/10 (+20) Dev.
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 277--277
+Underfull \hbox (badness 10000) in paragraph at lines 259--259
 \T1/pplx/m/n/10 (+20) Er-ror
  []
 
-<tfidf.png, id=139, 433.62pt x 289.08pt>
+<tfidf.png, id=150, 433.62pt x 289.08pt>
 File: tfidf.png Graphic file (type png)
 <use tfidf.png>
-Package pdftex.def Info: tfidf.png  used on input line 281.
+Package pdftex.def Info: tfidf.png  used on input line 263.
 (pdftex.def)             Requested size: 205.0023pt x 136.67041pt.
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [6 <./tfidf.png>]
-Underfull \hbox (badness 1259) in paragraph at lines 299--302
+Underfull \hbox (badness 1259) in paragraph at lines 281--284
 \T1/pplx/m/n/10 (+20) Minh-Thang Lu-ong and Quoc V. Le.
  []
 
-
-Underfull \hbox (badness 1092) in paragraph at lines 314--317
+[6 <./tfidf.png>]
+Underfull \hbox (badness 1092) in paragraph at lines 296--299
 []\T1/pplx/m/n/10 (+20) Jacob De-vlin, Ming-Wei Chang, Ken-
  []
 
 
-Underfull \hbox (badness 1810) in paragraph at lines 319--322
+Underfull \hbox (badness 1810) in paragraph at lines 301--304
 \T1/pplx/m/n/10 (+20) (2012).  Japanese and Ko-rean Voice
  []
 
 
-Underfull \hbox (badness 3375) in paragraph at lines 331--334
+Underfull \hbox (badness 3058) in paragraph at lines 306--311
+\T1/pplx/m/n/10 (+20) William W Co-hen, Jaime Car-bonell,
+ []
+
+
+Underfull \hbox (badness 3375) in paragraph at lines 313--316
 []\T1/pplx/m/n/10 (+20) Rico Sen-nrich, Barry Had-dow, and
  []
 
@@ -899,93 +874,106 @@ See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.347 \renewcommand{\tableformat}
+l.339 \renewcommand{\tableformat}
                                  {\tablename~\thetable}
 Try typing  <return>  to proceed.
 If that doesn't work, type  X <return>  to quit.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 358--358
+Underfull \hbox (badness 10000) in paragraph at lines 350--350
 []|\T1/pplx/m/n/10 (+20) Median
  []
 
 
-Underfull \hbox (badness 1648) in paragraph at lines 380--380
+Underfull \hbox (badness 1648) in paragraph at lines 368--368
  []|\T1/pplx/b/n/10 Dataset|
  []
 
 
-Underfull \hbox (badness 1331) in paragraph at lines 382--382
+Underfull \hbox (badness 1331) in paragraph at lines 370--370
  []|\T1/pplx/m/n/10 (+20) Training|
  []
 
 
-Underfull \hbox (badness 2680) in paragraph at lines 382--383
+Underfull \hbox (badness 2680) in paragraph at lines 370--371
  []|\T1/pplx/m/n/10 (+20) 15001|
  []
 
 
-Underfull \hbox (badness 3417) in paragraph at lines 383--384
+Underfull \hbox (badness 3417) in paragraph at lines 371--372
  []|\T1/pplx/m/n/10 (+20) 2501|
  []
 
 
-Underfull \hbox (badness 3838) in paragraph at lines 384--384
+Underfull \hbox (badness 3838) in paragraph at lines 372--372
  []|\T1/pplx/m/n/10 (+20) Test|
  []
 
 
-Underfull \hbox (badness 3417) in paragraph at lines 384--385
+Underfull \hbox (badness 3417) in paragraph at lines 372--373
  []|\T1/pplx/m/n/10 (+20) 1938|
  []
 
+[8
 
-Underfull \hbox (badness 2478) in paragraph at lines 396--396
+
+]
+Underfull \hbox (badness 2478) in paragraph at lines 389--389
  []|\T1/pplx/b/n/9 Model|
  []
 
 
-Underfull \hbox (badness 3758) in paragraph at lines 398--398
+Underfull \hbox (badness 3758) in paragraph at lines 391--391
  []|\T1/pplx/b/n/9 Raw|
  []
 
 
-! LaTeX Error: Something's wrong--perhaps a missing \item.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.405 		\end{tablenotes}
-                        
-Try typing  <return>  to proceed.
-If that doesn't work, type  X <return>  to quit.
-
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 409.
-[8
+Overfull \hbox (2.27193pt too wide) in paragraph at lines 404--404
+[]|\T1/pplx/b/n/9 Replacement
+ []
 
 
-] [9]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 409.
+Overfull \hbox (3.71634pt too wide) in paragraph at lines 408--408
+ []|\T1/pplx/m/n/9 (-20) Augmented|
+ []
+
+
+Overfull \hbox (3.71634pt too wide) in paragraph at lines 411--411
+ []|\T1/pplx/m/n/9 (-20) Augmented|
+ []
+
+
+Overfull \hbox (3.71634pt too wide) in paragraph at lines 414--414
+ []|\T1/pplx/m/n/9 (-20) Augmented|
+ []
+
+
+Overfull \hbox (12.86984pt too wide) in paragraph at lines 402--417
+ [][] 
+ []
+
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 418.
+[9] [10]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 418.
  (./report.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 409.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 409.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 418.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 418.
 Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: C84D7C37017C79A8BF99023BF47DDEA9;636.
 
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 409.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 418.
  ) 
 Here is how much of TeX's memory you used:
- 11115 strings out of 492616
- 169741 string characters out of 6129482
- 316230 words of memory out of 5000000
- 14431 multiletter control sequences out of 15000+600000
- 86390 words of font info for 364 fonts, out of 8000000 for 9000
+ 11114 strings out of 492616
+ 169781 string characters out of 6129482
+ 314449 words of memory out of 5000000
+ 14438 multiletter control sequences out of 15000+600000
+ 85734 words of font info for 355 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 36i,13n,45p,1841b,450s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 37i,14n,45p,1785b,456s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/local/texlive/2019/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/t
 exlive/2019/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/tex
 live/2019/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texl
@@ -993,10 +981,10 @@ ive/2019/texmf-dist/fonts/type1/public/fpl/fplrc8a.pfb></usr/local/texlive/2019
 /texmf-dist/fonts/type1/urw/palatino/uplb8a.pfb></usr/local/texlive/2019/texmf-
 dist/fonts/type1/urw/palatino/uplr8a.pfb></usr/local/texlive/2019/texmf-dist/fo
 nts/type1/urw/palatino/uplri8a.pfb>
-Output written on report.pdf (9 pages, 191244 bytes).
+Output written on report.pdf (10 pages, 320015 bytes).
 PDF statistics:
- 230 PDF objects out of 1000 (max. 8388607)
- 204 compressed objects within 3 object streams
- 47 named destinations out of 1000 (max. 500000)
- 66152 words of extra memory for PDF output out of 74296 (max. 10000000)
+ 247 PDF objects out of 1000 (max. 8388607)
+ 218 compressed objects within 3 object streams
+ 50 named destinations out of 1000 (max. 500000)
+ 66157 words of extra memory for PDF output out of 74296 (max. 10000000)
 
